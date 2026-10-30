@@ -1,0 +1,53 @@
+name: "✨ Feature Request"
+description: Suggest a new feature or improvement for Nyx
+labels:
+  - enhancement
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Someone may have asked already.** Search existing issues first, and add a 👍 to a matching request instead of opening a second one.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a problem?
+      placeholder: I'm frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see.
+      placeholder: It would be great if Nyx could...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature_area
+    attributes:
+      label: Feature Area
+      description: The same groups you see in Settings.
+      options:
+        - Essentials
+        - Utilities
+        - Sound
+        - Energy and display
+        - Windows and Dock
+        - Mouse and keyboard
+        - Files
+        - App management
+        - App
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / References
+      description: Attach sketches, screenshots, or references.

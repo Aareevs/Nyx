@@ -1,0 +1,667 @@
+import AppKit
+import Carbon.HIToolbox
+import SwiftUI
+
+/// Drives the QR button, which appears after the capture is scanned so the
+/// preview never waits on detection to show, and the buttons grayed out
+/// because the after-capture action already did their work.
+final class ScreenshotQuickPreviewModel: ObservableObject {
+    @Published var qr: BarcodeDetector.Reading?
+    @Published var disabledActions: Set<ScreenshotQuickPreviewController.Action> = []
+}
+
+/// A transient capture preview that stays outside Command Tab and reflects
+/// automatic Save or Copy work that may already have completed.
+final class ScreenshotQuickPreviewController {
+    enum Action {
+        case edit
+        case pin
+        case copy
+        case save
+        case saveAndCopy
+        case discard
+    }
+
+    private let capture: ScreenshotSelectionController.Capture
+    private let strings: ScreenshotFeatureStrings
+    private let defaultAction: ScreenshotDefaultAction
+    /// Runs one action and reports which sub-actions actually happened —
+    /// save-and-copy can succeed by halves, and only the done halves gray
+    /// their buttons out. Empty means the action failed entirely.
+    private let action: (Action) -> Set<Action>
+    /// Writes the capture as it would be saved into a temporary file for the
+    /// system share sheet.
+    private let shareFile: () -> URL?
+    private let shareAnchor = ShelfSharePickerAnchor.Anchor()
+    private var systemSharing = false
+    private let onClose: () -> Void
+    private let model = ScreenshotQuickPreviewModel()
+    private var panel: ScreenshotQuickPreviewPanel?
+    private var keyMonitor: Any?
+    private var dismissWork: DispatchWorkItem?
+    private let baseDismissDuration: TimeInterval?
+    private var autoDismissDuration: TimeInterval?
+    private var closed = false
+    private let presentationID = UUID()
+    private var shownInNotch = false
+    private var didStartPreview = false
+    private var pointerInside = false
+
+    var protectedWindowIDs: Set<CGWindowID> {
+        guard let panel, panel.isVisible, panel.windowNumber > 0 else { return [] }
+        return [CGWindowID(panel.windowNumber)]
+    }
+
+    init(capture: ScreenshotSelectionController.Capture,
+         strings: ScreenshotFeatureStrings,
+         defaultAction: ScreenshotDefaultAction,
+         completedActions: Set<Action>,
+         dismissInterval: TimeInterval?,
+         action: @escaping (Action) -> Set<Action>,
+         shareFile: @escaping () -> URL?,
+         onClose: @escaping () -> Void) {
+        self.capture = capture
+        self.strings = strings
+        self.defaultAction = defaultAction
+        self.baseDismissDuration = dismissInterval
+        self.autoDismissDuration = dismissInterval
+        self.action = action
+        self.shareFile = shareFile
+        self.onClose = onClose
+        model.disabledActions = completedActions.intersection([.save, .copy])
+    }
+
+    func show(inNotch: Bool = true) {
+        guard panel == nil, !shownInNotch, !closed else { return }
+        let wantsNotch = inNotch && NotchSupport.routes(.capture)
+            && NotchService.shared.acceptsSystemFeedback
+        let presentationPolicy = ScreenshotSupport.confirmationPreviewPresentationPolicy(
+            dismissInterval: baseDismissDuration,
+            defaults: .standard)
+        let content = ScreenshotQuickPreviewView(
+            image: Self.thumbnail(for: capture.image),
+            strings: strings,
+            model: model,
+            perform: { [weak self] action in self?.perform(action) },
+            dragItem: { [weak self] in
+                guard let self else { return NSItemProvider() }
+                return ScreenshotService.dragItemProvider(image: self.capture.image,
+                                                          scale: self.capture.scale,
+                                                          strings: self.strings)
+                    ?? NSItemProvider()
+            },
+            systemShare: { [weak self] in self?.performSystemShare() },
+            shareAnchor: shareAnchor,
+            showQR: { [weak self] in self?.showQRResult() },
+            copyText: { [weak self] in self?.copyText() },
+            dismiss: { [weak self] in self?.close() },
+            hoverChanged: { [weak self] inside in self?.hoverChanged(inside) },
+            showsDismissButton: presentationPolicy.showsDismissButton,
+            embedded: wantsNotch)
+        if wantsNotch, NotchService.shared.presentCapture(
+            id: presentationID, content: AnyView(content), actions: AnyView(content.toolbar), height: Self.size.height,
+            takeFocus: presentationPolicy.takesFocus,
+            closeOnCollapse: presentationPolicy.closesOnCollapse,
+            fallback: { [weak self] in
+                guard let self else { return }
+                self.shownInNotch = false
+                self.pointerInside = false
+                if let keyMonitor = self.keyMonitor { NSEvent.removeMonitor(keyMonitor) }
+                self.keyMonitor = nil
+                self.show(inNotch: false)
+            },
+            close: { [weak self] in self?.close() },
+            dismiss: { [weak self] in self?.dismissForClickElsewhere() },
+            hover: { [weak self] inside in self?.hoverChanged(inside) }) {
+            shownInNotch = true
+            if let window = NotchService.shared.presentationWindow { installKeyMonitor(for: window) }
+            finishShowing()
+            return
+        }
+        let host = NSHostingController(rootView: content)
+        let size = Self.size
+        let panel = ScreenshotQuickPreviewPanel(
+            contentRect: CGRect(origin: .zero, size: size),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false)
+        panel.contentViewController = host
+        panel.isReleasedWhenClosed = false
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.hidesOnDeactivate = false
+        panel.level = .statusBar
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary,
+                                    .transient, .ignoresCycle]
+
+        let frame = previewFrame(for: size)
+        panel.setFrame(frame, display: false)
+        self.panel = panel
+        installKeyMonitor(for: panel)
+        panel.orderFrontRegardless()
+        // On by default: leaving the keyboard behind after a capture is what
+        // #1463 reported, since Command-C and Command-S did nothing until a
+        // click. Taking it costs the caret in the app being typed into
+        // (#1089), so persistent previews always leave focus where it was;
+        // a click can still hand focus to the preview explicitly.
+        if presentationPolicy.takesFocus {
+            panel.makeKey()
+        }
+        finishShowing()
+    }
+
+    private func finishShowing() {
+        if !didStartPreview {
+            didStartPreview = true
+            scanForQR()
+        }
+        scheduleAutoDismiss()
+    }
+
+    private func dismissForClickElsewhere() {
+        close()
+    }
+
+    private func hoverChanged(_ inside: Bool) {
+        pointerInside = inside
+        dismissWork?.cancel()
+        dismissWork = nil
+        if !inside { scheduleAutoDismiss() }
+    }
+
+    /// Scans the full resolution capture off the main thread and reveals the
+    /// QR button if a code is found. Silent when there is none, so a plain
+    /// screenshot preview is untouched.
+    private func scanForQR() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let image = self?.capture.image, let reading = BarcodeDetector.read(image) else { return }
+            DispatchQueue.main.async {
+                guard let self, !self.closed else { return }
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                    self.model.qr = reading
+                }
+            }
+        }
+    }
+
+    /// Hands the code to the shared result panel, which spells out the
+    /// content before anything is copied. The preview steps aside.
+    private func showQRResult() {
+        guard let reading = model.qr else { return }
+        close()
+        QRResultController.shared.show(reading: reading)
+    }
+
+    /// The screenshot is already available at full resolution, so OCR can
+    /// begin without showing another capture surface.
+    private func copyText() {
+        guard !closed, AppFeature.screenOCR.isAvailable else { return }
+        let image = capture.image
+        close()
+        // An after-capture copy landing during recognition would make the
+        // clipboard newer than the text, which would then be dropped, so
+        // recognition starts once that copy is in.
+        ScreenshotService.shared.afterAutoCopy {
+            ScreenTextService.shared.copyText(from: image)
+        }
+    }
+
+    private static func thumbnail(for image: CGImage) -> CGImage {
+        let maximumDimension: CGFloat = 1_200
+        let longest = CGFloat(max(image.width, image.height))
+        guard longest > maximumDimension else { return image }
+        let factor = maximumDimension / longest
+        let width = max(1, Int((CGFloat(image.width) * factor).rounded()))
+        let height = max(1, Int((CGFloat(image.height) * factor).rounded()))
+        guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: 8,
+                                      bytesPerRow: 0,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return image }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage() ?? image
+    }
+
+    func close() {
+        guard !closed else { return }
+        closed = true
+        dismissWork?.cancel()
+        dismissWork = nil
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+            self.keyMonitor = nil
+        }
+        panel?.orderOut(nil)
+        panel = nil
+        if shownInNotch {
+            shownInNotch = false
+            NotchService.shared.removeCapture(id: presentationID)
+        }
+        onClose()
+    }
+
+    private func perform(_ requested: Action) {
+        guard !closed else { return }
+        // Keyboard shortcuts honor the grayed-out buttons: what the
+        // after-capture action already did is not done twice.
+        guard !model.disabledActions.contains(requested) else { return }
+        dismissWork?.cancel()
+        dismissWork = nil
+        if requested == .edit {
+            // Release the island's non-activating key panel before promoting
+            // the app and constructing another SwiftUI window. Defer past the
+            // button's current update rather than nesting editor layout in it.
+            let action = action
+            close()
+            DispatchQueue.main.async { _ = action(requested) }
+            return
+        }
+        guard !action(requested).isEmpty else {
+            scheduleAutoDismiss()
+            return
+        }
+        close()
+    }
+
+    /// The system share sheet: AirDrop, messages and every other target the
+    /// Mac offers. The preview waits while the sheet is up, and a chosen
+    /// target finishes it the way Copy does.
+    private func performSystemShare() {
+        guard !closed, !systemSharing else { return }
+        dismissWork?.cancel()
+        dismissWork = nil
+        guard let url = shareFile() else {
+            NSSound.beep()
+            scheduleAutoDismiss()
+            return
+        }
+        systemSharing = true
+        let shown = shareAnchor.present([url]) { [weak self] chosen in
+            guard let self else { return }
+            self.systemSharing = false
+            if chosen { self.close() } else { self.scheduleAutoDismiss() }
+        }
+        if !shown {
+            systemSharing = false
+            scheduleAutoDismiss()
+        }
+    }
+
+    fileprivate static let size = CGSize(width: 350, height: 210)
+
+    private func previewFrame(for size: CGSize) -> CGRect {
+        let pointer = NSEvent.mouseLocation
+        let screens = NSScreen.screens.map { (frame: $0.frame, visibleFrame: $0.visibleFrame) }
+        let visibleFrame = ScreenshotSupport.quickPreviewVisibleFrame(
+            anchor: capture.anchorRect,
+            pointer: pointer,
+            screens: screens,
+            fallback: NSScreen.pointerVisibleFrame)
+        let storedPosition = UserDefaults.standard.string(
+            forKey: DefaultsKey.screenshotPreviewPosition) ?? ""
+        let position = ScreenshotSupport.QuickPreviewPosition(rawValue: storedPosition)
+            ?? .automatic
+        // With an after-capture action the preview is just a confirmation,
+        // so it sits quietly in the corner and leaves sooner, instead of
+        // popping up next to the selection and waiting.
+        let effectivePosition: ScreenshotSupport.QuickPreviewPosition =
+            position == .automatic && defaultAction != .none
+                ? .bottomRight
+                : position
+        return ScreenshotSupport.quickPreviewFrame(
+            size: size,
+            anchor: capture.anchorRect,
+            pointer: pointer,
+            visibleFrame: visibleFrame,
+            position: effectivePosition)
+    }
+
+    private func scheduleAutoDismiss() {
+        guard !closed, !pointerInside, !systemSharing,
+              let dismissDuration = autoDismissDuration
+        else { return }
+        dismissWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.close() }
+        dismissWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + dismissDuration, execute: work)
+    }
+
+    private func installKeyMonitor(for panel: NSPanel) {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak panel] event in
+            guard let self, !self.closed, let panel, panel.isVisible, event.window === panel,
+                  !self.shownInNotch || NotchService.shared.isCaptureVisible(id: self.presentationID),
+                  panel.attachedSheet == nil, !(panel.firstResponder is NSText),
+                  !ShortcutCapture.isCapturing else { return event }
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            let key = Int(event.keyCode)
+            if flags.intersection([.command, .option, .shift, .control]) == .command {
+                let text = event.charactersIgnoringModifiers?.folding(
+                    options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+                let letter = text?.count == 1 ? text?.first : nil
+                let isLatinLetter = letter.map { $0.isASCII && $0.isLetter } ?? false
+                if isLatinLetter ? letter == "w" : key == kVK_ANSI_W {
+                    self.close()
+                    return nil
+                }
+            }
+            if flags.contains(.command) {
+                switch key {
+                case kVK_ANSI_C:
+                    self.perform(.copy)
+                    return nil
+                case kVK_ANSI_S:
+                    self.perform(.save)
+                    return nil
+                case kVK_Delete, kVK_ForwardDelete:
+                    self.perform(.discard)
+                    return nil
+                default:
+                    return event
+                }
+            }
+            guard flags.isDisjoint(with: [.command, .control, .option]) else { return event }
+            switch key {
+            case kVK_Return, kVK_ANSI_KeypadEnter, kVK_ANSI_E:
+                self.perform(.edit)
+                return nil
+            case kVK_Delete, kVK_ForwardDelete:
+                self.perform(.discard)
+                return nil
+            case kVK_Escape:
+                // Escape only dismisses. Before the after-capture actions it
+                // was equivalent to discard; now a discard can delete a file
+                // the HUD just announced as saved, and "make this popup go
+                // away" must never do that. Deleting stays on Trash and ⌫.
+                self.close()
+                return nil
+            default:
+                return event
+            }
+        }
+    }
+}
+
+private final class ScreenshotQuickPreviewPanel: OverlayPanel {
+    override var canBecomeKey: Bool { true }
+
+    /// The preview shows up unasked for, so presenting it leaves the keyboard
+    /// where it was unless the person opted in, and a click is what hands it
+    /// over. Its shortcuts read a local monitor, and that monitor is delivered
+    /// nothing until this panel is key. The hand-off sits in `sendEvent`
+    /// rather than `mouseDown` because the hosted SwiftUI content answers a
+    /// press on a button itself, and a window's `mouseDown` never runs for the
+    /// clicks a view has taken.
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown, !isKeyWindow {
+            makeKey()
+        }
+        super.sendEvent(event)
+    }
+}
+
+private struct ScreenshotQuickPreviewView: View {
+    let image: CGImage
+    let strings: ScreenshotFeatureStrings
+    @ObservedObject var model: ScreenshotQuickPreviewModel
+    @ObservedObject private var featureRuntime = FeatureRuntime.shared
+    let perform: (ScreenshotQuickPreviewController.Action) -> Void
+    let dragItem: () -> NSItemProvider
+    let systemShare: () -> Void
+    let shareAnchor: ShelfSharePickerAnchor.Anchor
+    let showQR: () -> Void
+    let copyText: () -> Void
+    let dismiss: () -> Void
+    let hoverChanged: (Bool) -> Void
+    let showsDismissButton: Bool
+    var embedded = false
+    var actionsOnly = false
+    var toolbar: Self {
+        var view = self
+        view.actionsOnly = true
+        return view
+    }
+
+    var body: some View {
+        if actionsOnly { actionBar }
+        else { preview }
+    }
+
+    private var actionBar: some View {
+        HStack(spacing: embedded ? 2 : 5) {
+            Button {
+                perform(.discard)
+            } label: {
+                Image(systemName: "trash")
+                    .frame(width: embedded ? 28 : 22, height: embedded ? 28 : 18)
+            }
+            .modifier(ScreenshotPreviewActionStyle(embedded: embedded))
+            .controlSize(.small)
+            .screenshotSafeHelp("\(strings.discardConfirm)  (⌫)")
+            .accessibilityLabel(strings.discardConfirm)
+            if model.qr != nil {
+                qrControl
+                    .transition(.scale.combined(with: .opacity))
+            }
+            // The floating preview shows Copy text on its thumbnail.
+            if embedded, featureRuntime.isAvailable(.screenOCR) {
+                textControl
+            }
+            actionButton(symbol: "square.and.arrow.down",
+                         title: strings.saveButton,
+                         shortcut: "⌘S",
+                         disabled: model.disabledActions.contains(.save)) {
+                perform(.save)
+            }
+            actionButton(symbol: "doc.on.doc",
+                         title: strings.copyButton,
+                         shortcut: "⌘C",
+                         disabled: model.disabledActions.contains(.copy)) {
+                perform(.copy)
+            }
+            if embedded {
+                Button(action: systemShare) {
+                    Image(systemName: "square.and.arrow.up").frame(width: 28, height: 28)
+                }
+                .modifier(ScreenshotPreviewActionStyle(embedded: true))
+                .controlSize(.small)
+                .background(ShelfSharePickerAnchor(anchor: shareAnchor))
+                .screenshotSafeHelp(strings.shareButton)
+                .accessibilityLabel(strings.shareButton)
+            }
+            if !embedded { Spacer(minLength: 4) }
+            if embedded {
+                Button {
+                    perform(.pin)
+                } label: {
+                    Image(systemName: "pin").frame(width: 28, height: 28)
+                }
+                .modifier(ScreenshotPreviewActionStyle(embedded: true))
+                .controlSize(.small)
+                .screenshotSafeHelp(strings.pinButton)
+                .accessibilityLabel(strings.pinButton)
+            }
+            Button { perform(.edit) } label: {
+                if embedded { Image(systemName: "pencil").frame(width: 28, height: 28) }
+                else { Text(strings.editButton) }
+            }
+            .accessibilityLabel(strings.editButton)
+            .modifier(ScreenshotPreviewActionStyle(embedded: embedded, prominent: true))
+            .controlSize(.small)
+            .screenshotSafeHelp("\(strings.editButton)  (⏎)")
+        }
+    }
+
+    private var thumbnailDismissButton: some View {
+        Button(action: dismiss) {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 24, height: 24)
+                .background(.regularMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(6)
+        .screenshotSafeHelp("\(strings.done)  (⎋)")
+        .accessibilityLabel(strings.done)
+    }
+
+    private var thumbnailButtons: some View {
+        HStack(spacing: 5) {
+            if featureRuntime.isAvailable(.screenOCR) {
+                thumbnailButton(symbol: "text.viewfinder", title: strings.copyTextButton,
+                                action: copyText)
+            }
+            thumbnailButton(symbol: "square.and.arrow.up", title: strings.shareButton,
+                            action: systemShare)
+                .background(ShelfSharePickerAnchor(anchor: shareAnchor))
+            thumbnailButton(symbol: "pin", title: strings.pinButton) { perform(.pin) }
+        }
+        .padding(6)
+    }
+
+    private func thumbnailButton(symbol: String,
+                                 title: String,
+                                 action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 24, height: 24)
+                .background(.regularMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .screenshotSafeHelp(title)
+        .accessibilityLabel(title)
+    }
+
+    private var preview: some View {
+        VStack(spacing: 10) {
+            Button {
+                perform(.edit)
+            } label: {
+                Image(decorative: image, scale: 1)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(maxWidth: 320, maxHeight: 138)
+                    .frame(width: embedded ? nil : 320, height: 138)
+                    .background(Color.black.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .onDrag(dragItem)
+            .screenshotSafeHelp(strings.editButton)
+            .accessibilityLabel(strings.editButton)
+            .overlay(alignment: .topLeading) {
+                if showsDismissButton { thumbnailDismissButton }
+            }
+            .overlay(alignment: .topTrailing) {
+                // The floating action row already fills its fixed width in
+                // longer languages, so Copy text, share and pin ride on the
+                // thumbnail there instead of squeezing Save, Copy and Edit.
+                if !embedded { thumbnailButtons }
+            }
+
+            if !embedded { actionBar }
+        }
+        .padding(10)
+        .frame(width: embedded ? nil : ScreenshotQuickPreviewController.size.width,
+               height: embedded ? nil : ScreenshotQuickPreviewController.size.height)
+        .background {
+            if !embedded {
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.regularMaterial)
+            }
+        }
+        .overlay {
+            if !embedded {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
+            }
+        }
+        .onHover(perform: previewHoverChanged)
+    }
+
+    private func previewHoverChanged(_ inside: Bool) {
+        // The island tracks the image and header together. Leaving just the
+        // image must not restart dismissal while its actions are still hovered.
+        guard !embedded else { return }
+        hoverChanged(inside)
+    }
+
+    /// A code was found: open the result panel that spells out its content.
+    private var qrControl: some View {
+        Button(action: showQR) {
+            Image(systemName: "qrcode")
+                .frame(width: embedded ? 28 : 22, height: embedded ? 28 : 18)
+        }
+        .modifier(ScreenshotPreviewActionStyle(embedded: embedded))
+        .controlSize(.small)
+        .tint(.accentColor)
+        .screenshotSafeHelp(L10n.shared.s.qrResultTitle)
+        .accessibilityLabel(L10n.shared.s.qrResultTitle)
+    }
+
+    /// Runs OCR against the full-resolution capture and copies its text.
+    private var textControl: some View {
+        Button(action: copyText) {
+            Image(systemName: "text.viewfinder").frame(width: 28, height: 28)
+        }
+        .modifier(ScreenshotPreviewActionStyle(embedded: true))
+        .controlSize(.small)
+        .screenshotSafeHelp(strings.copyTextButton)
+        .accessibilityLabel(strings.copyTextButton)
+    }
+
+    private func actionButton(symbol: String,
+                              title: String,
+                              shortcut: String,
+                              disabled: Bool = false,
+                              action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Group {
+                if embedded { Image(systemName: symbol).frame(width: 28, height: 28) }
+                else { Label(title, systemImage: symbol) }
+            }
+                .font(.system(size: 11, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        }
+        .modifier(ScreenshotPreviewActionStyle(embedded: embedded))
+        .controlSize(.small)
+        .disabled(disabled)
+        .opacity(disabled ? 0.4 : 1)
+        .screenshotSafeHelp("\(title)  (\(shortcut))")
+        .accessibilityLabel(title)
+    }
+}
+
+/// The island header has its own surface; native button bezels waste the space
+/// needed by its title at the minimum width. Keep 28-point targets in that host.
+private struct ScreenshotPreviewActionStyle: ViewModifier {
+    let embedded: Bool
+    var prominent = false
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if embedded {
+            content.buttonStyle(NotchButtonStyle(cornerRadius: 8))
+                .background(prominent ? Color.white.opacity(0.14) : .clear,
+                            in: RoundedRectangle(cornerRadius: 8))
+        } else if prominent {
+            content.buttonStyle(.borderedProminent)
+        } else {
+            content.buttonStyle(.bordered)
+        }
+    }
+}

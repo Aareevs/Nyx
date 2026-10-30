@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  # Update Swift Package Manager dependencies
+  - package-ecosystem: "swift"
+    directory: "/"
+    # Paused: no automatic update PRs (and no CI runs from them) for now.
+    open-pull-requests-limit: 0
+    schedule:
+      interval: "weekly"
+      time: "06:00"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Update GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    # Paused: no automatic update PRs (and no CI runs from them) for now.
+    open-pull-requests-limit: 0
+    schedule:
+      interval: "weekly"
+      time: "06:00"
+    commit-message:
+      prefix: "actions"
