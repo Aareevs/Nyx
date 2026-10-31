@@ -4,8 +4,12 @@ name: Release
 # preflight runs without release credentials and proves that the tag names a
 # verified commit already present on main before the environment can be approved.
 on:
-  push:
-    tags: ["v[0-9]*"]
+  # Paused: releases are built locally with Tools/make-release.sh and uploaded
+  # with `gh release create`, so a version tag must not start this. It also
+  # needs an Apple Developer ID, which Nyx does not use. To turn it back on:
+  #   push:
+  #     tags: ["v[0-9]*"]
+  workflow_dispatch:
 
 permissions: {}
 

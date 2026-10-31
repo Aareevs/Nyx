@@ -141,7 +141,12 @@ Reorder or hide panel sections, choose a compact layout, and export settings to 
 
 ## Install
 
-Build it from source (see below) and drag the resulting app into Applications.
+1. Download `Nyx-<version>.dmg` from the [latest release](https://github.com/Aareevs/Nyx/releases/latest).
+2. Open it and drag **Nyx** into **Applications**.
+3. Open Nyx. The first time, macOS blocks it, because Nyx is not signed with a paid Apple Developer ID. Go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**.
+4. Allow only the permissions the features you want ask for.
+
+To update, download the new `.dmg` and drag Nyx into Applications again, replacing the old one. Your settings and permissions stay. macOS may ask for **Open Anyway** once more.
 
 ## Uninstall
 
@@ -174,6 +179,8 @@ See the [permissions guide](docs/PERMISSIONS.md) for which features need access 
 cd path/to/nyx
 ./build.sh --dev            # build the separate Developer variant
 ./build.sh --dev --install  # install and launch it
+./build.sh --install        # build and install the regular Nyx app
+./Tools/make-release.sh     # package dist/Nyx-<version>.dmg to share
 ```
 
 Xcode Command Line Tools are the only requirement.
