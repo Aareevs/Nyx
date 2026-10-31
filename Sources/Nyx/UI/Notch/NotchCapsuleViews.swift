@@ -225,8 +225,8 @@ struct NotchCapsuleRestingView: View {
                     NotchAgentRestingWing(leading: true)
                     NotchAgentRestingWing(leading: false)
                 case .clock:
-                    NotchRestingTime(size: 11)
-                    NotchRestingWeather(size: 11)
+                    NotchRestingTime(size: 13)
+                    NotchRestingWeather(size: 12)
                 case .music:
                     if let artwork = music.artwork {
                         NotchMusicCover(artwork: artwork, side: CapsuleLayout.artworkSide(geometry),

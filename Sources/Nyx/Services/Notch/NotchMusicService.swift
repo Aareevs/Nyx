@@ -164,6 +164,10 @@ final class NotchMusicService: ObservableObject {
             if let playback = next, let cover = NotchBrowserArtwork.shared.artwork(for: playback) {
                 next = playback.withArtwork(cover)
             }
+            if let playback = next,
+               let logo = NotchSiteIcon.site(forTitle: playback.track.title, bundle: playback.track.appBundleIdentifier)?.imageData {
+                next = playback.withArtwork(logo)
+            }
             if cachedArtwork != next?.track.artworkData {
                 cachedArtwork = next?.track.artworkData
                 cachedImage = cachedArtwork.flatMap { ImageThumbnailer.thumbnail(data: $0, pointSize: 160, scale: 2) }

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The time, which the closed island shows on the camera's left while idle.
 struct NotchRestingTime: View {
-    var size: CGFloat = 10
+    var size: CGFloat = 13
 
     /// " AM" or " PM" on a 12-hour clock, nothing on a 24-hour one.
     private static func meridiem(_ date: Date) -> String {
@@ -29,7 +29,7 @@ struct NotchRestingTime: View {
 /// The weather, which it shows on the camera's right.
 struct NotchRestingWeather: View {
     @ObservedObject private var weather = NotchWeatherService.shared
-    var size: CGFloat = 10
+    var size: CGFloat = 12
 
     var body: some View {
         if let reading = weather.reading {

@@ -72,9 +72,9 @@ enum NotchMascotTests {
                      && NotchMascotSupport.timerReaction(finishing: .shortBreak) == .ready
                      && NotchMascotSupport.timerReaction(finishing: .longBreak) == .ready,
                      "a timer's ring startles it, a finished focus session makes it glad and a break's end gets it ready")
-        suite.expect(NotchMascotSupport.powerReaction(pluggedIn: true, charged: false, low: false) == .love
+        suite.expect(NotchMascotSupport.powerReaction(pluggedIn: true, charged: false, low: false) == .zap
                      && NotchMascotSupport.powerReaction(pluggedIn: false, charged: true, low: false) == .celebrate
-                     && NotchMascotSupport.powerReaction(pluggedIn: false, charged: false, low: true) == .yawn
+                     && NotchMascotSupport.powerReaction(pluggedIn: false, charged: false, low: true) == .deflate
                      && NotchMascotSupport.powerReaction(pluggedIn: false, charged: false, low: false) == nil,
                      "the charger going in makes it glad, a full battery makes it cheer, a low one tires it, and unplugging is no news")
         suite.expect(!began(nil, -120) && !began(NotchCalendarCountdown(event: next, ongoing: false), -300)
@@ -565,9 +565,10 @@ enum NotchMascotTests {
         suite.expect(NotchMascotMoment.agents.reaction == .ready && NotchMascotMoment.agents.followUp == .celebrate
                      && NotchMascotMoment.allCases.filter { $0.followUp != nil } == [.agents],
                      "an AI agent's moment gets to work, then celebrates, and only it plays two beats")
-        suite.expect(Set(NotchMascotMoment.allCases.compactMap(\.reaction)) == Set(NotchMascotReaction.allCases)
-                     && NotchMascotMoment.eventStarts.reaction == .bounce && NotchMascotMoment.lowBattery.reaction == .yawn,
-                     "every reaction has a moment to try, an event beginning bounces and a low battery yawns")
+        // Love and yawn are no one's moment now that charging shocks and a low battery deflates; the companion's greetings still use it.
+        suite.expect(Set(NotchMascotMoment.allCases.compactMap(\.reaction)).union([.love, .yawn]) == Set(NotchMascotReaction.allCases)
+                     && NotchMascotMoment.eventStarts.reaction == .bounce && NotchMascotMoment.lowBattery.reaction == .deflate,
+                     "every reaction but love has a moment to try, an event beginning bounces and a low battery yawns")
         for language in AppLanguage.allCases {
             let text = FeatureStrings.notchMascot(language)
             let names = NotchMascotMoment.allCases.map { text.moment($0, language: language) }
@@ -591,7 +592,7 @@ enum NotchMascotTests {
         for reaction in NotchMascotReaction.allCases {
             let kind = NotchMascotVisit.Kind.cameo(reaction)
             suite.expect(NotchMascotMotion.cameoHold(reaction) > reaction.length
-                         && NotchMascotMotion.duration(of: kind) <= 3,
+                         && NotchMascotMotion.duration(of: kind) <= ([.zap, .deflate].contains(reaction) ? 4 : 3),
                          "coming out for \(reaction.rawValue), it stays for all of it and is soon gone")
             for (name, track) in [("left wing", left), ("right wing", right), ("capsule", capsule)] {
                 let path = NotchMascotMotion.path(for: kind, on: track)

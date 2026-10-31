@@ -48,6 +48,10 @@ final class NotchMascotRig: NSObject {
     private let fillMask = CAShapeLayer()
     private let visor = CAShapeLayer()
     private let shine = CAShapeLayer()
+    /// Headphones that go on for a song, hidden the rest of the time.
+    private let headphones = CAShapeLayer()
+    /// Sparks that flicker around it while it is shocked.
+    private let sparks = CAShapeLayer()
     private let face = CALayer()
     private let leftEye = CAShapeLayer()
     private let rightEye = CAShapeLayer()
@@ -71,12 +75,17 @@ final class NotchMascotRig: NSObject {
         squasher.addSublayer(tilter)
         for layer in [ears, antenna, bulb, fill, visor, shine] { tilter.addSublayer(layer) }
         tilter.addSublayer(attention)
+        tilter.addSublayer(headphones)
+        headphones.opacity = 0
+        hopper.addSublayer(sparks)
+        sparks.opacity = 0
+        sparks.fillColor = nil
         attention.addSublayer(face)
         face.addSublayer(leftEye)
         face.addSublayer(rightEye)
         fill.mask = fillMask
         for layer in [root, hopper, squasher, tilter, attention, face, ears, antenna, bulb, fill, fillMask, visor, shine,
-                      leftEye, rightEye] {
+                      headphones, sparks, leftEye, rightEye] {
             layer.actions = Self.noActions
         }
         shine.fillColor = NotchMascotColor.shine.cgColor
@@ -112,10 +121,20 @@ final class NotchMascotRig: NSObject {
         }
         let box = CGRect(x: 0, y: 0, width: size, height: size)
         root.bounds = box
-        for layer in [hopper, squasher, tilter, attention, face, ears, antenna, bulb, fill, fillMask, visor, shine] {
+        for layer in [hopper, squasher, tilter, attention, face, ears, antenna, bulb, fill, fillMask, visor, shine,
+                      headphones, sparks] {
             layer.frame = box
             layer.contentsScale = scale
         }
+        headphones.path = NotchMascotGeometry.headphones(size: size, robot: look.style == .robot)
+        headphones.fillColor = CGColor(gray: 0.96, alpha: 1)
+        headphones.strokeColor = CGColor(gray: 0, alpha: 0.5)
+        headphones.lineWidth = max(0.5, size * 0.025)
+        sparks.path = NotchMascotGeometry.sparks(size: size)
+        sparks.strokeColor = CGColor(red: 1, green: 0.88, blue: 0.2, alpha: 1)
+        sparks.lineWidth = max(0.8, size * 0.05)
+        sparks.lineJoin = .miter
+        sparks.lineCap = .round
         root.contentsScale = scale
         let robot = look.style == .robot
         let palette = look.palette
@@ -508,6 +527,8 @@ final class NotchMascotRig: NSObject {
             case .perk, .bounce: flashFace(.alert, duration: 1)
             case .ready: flashFace(.determined, duration: 1)
             case .groove: flashFace(.happy, duration: 1.4)
+            case .zap: flashFace(.alert, duration: 1.2)
+            case .deflate: flashFace(.sleepy, duration: 1.4)
             }
             return
         }
@@ -592,41 +613,232 @@ final class NotchMascotRig: NSObject {
             nod.beginTime = now + 0.12
             squasher.add(nod, forKey: "nod")
         case .groove:
-            // It hears the music: smiling eyes, a bob on every beat and a
-            // lean one way and the other, landing a little squashed.
+            // It puts headphones on for the song, rocks its head up and down
+            // to the beat, and music notes drift up from beside it. The
+            // headphones come off again as the reaction ends.
             flashFace(.happy, duration: reaction.length)
-            let beats = 4
-            let height = max(1, lift * 0.45)
-            var heights: [CGFloat] = [], leans: [CGFloat] = [], squashes: [CATransform3D] = []
+            let length = reaction.length
+            let beats = 3
+            let height = max(1, lift * 0.3)
+            var heights: [CGFloat] = [], squashes: [CATransform3D] = [], nods: [CGFloat] = []
             var times: [NSNumber] = []
             for step in 0...(beats * 2) {
                 times.append(NSNumber(value: Double(step) / Double(beats * 2)))
+                // Head up on the beat, down between beats; the eyes dip with it.
                 let up = step % 2 == 1
-                heights.append(up ? -height : 0)
-                leans.append(up ? (step % 4 == 1 ? 0.11 : -0.11) : 0)
-                squashes.append(squashed(up ? -0.05 : step == 0 || step == beats * 2 ? 0 : 0.07))
+                let end = step == 0 || step == beats * 2
+                heights.append(end ? 0 : up ? -height : height * 0.5)
+                squashes.append(squashed(end ? 0 : up ? -0.04 : 0.05))
+                nods.append(end ? 0 : up ? -size * 0.02 : size * 0.035)
             }
-            let bob = CAKeyframeAnimation(keyPath: "transform.translation.y")
-            bob.values = heights
-            bob.keyTimes = times
-            bob.timingFunctions = (0..<(beats * 2)).map {
-                CAMediaTimingFunction(name: $0 % 2 == 0 ? .easeOut : .easeIn)
+            let rock = CAKeyframeAnimation(keyPath: "transform.translation.y")
+            rock.values = heights
+            rock.keyTimes = times
+            rock.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            rock.duration = length
+            rock.isAdditive = true
+            hopper.add(rock, forKey: "hop")
+            let squish = CAKeyframeAnimation(keyPath: "transform")
+            squish.values = squashes.map { NSValue(caTransform3D: $0) }
+            squish.keyTimes = times
+            squish.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            squish.duration = length
+            squasher.add(squish, forKey: "squash")
+            let dip = CAKeyframeAnimation(keyPath: "transform.translation.y")
+            dip.values = nods
+            dip.keyTimes = times
+            dip.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            dip.duration = length
+            dip.isAdditive = true
+            face.add(dip, forKey: "nod")
+            putOnHeadphones(duration: length)
+            floatNotes(beginTime: now + 0.35)
+        case .zap:
+            flashFace(.alert, duration: reaction.length)
+            electrocute(duration: reaction.length)
+        case .deflate:
+            flashFace(.sleepy, duration: reaction.length)
+            deflate(duration: reaction.length)
+        }
+    }
+
+    /// Goes soft like slime: a small squeeze, then it sags into a wide flat
+    /// puddle, wobbling as it settles, breathes there a moment and slowly
+    /// puffs back up. The bottom stays where it was, as on a floor.
+    private func deflate(duration: TimeInterval) {
+        let bottom = size * 0.42
+        func blob(_ width: CGFloat, _ height: CGFloat) -> NSValue {
+            NSValue(caTransform3D: CATransform3DConcat(CATransform3DMakeScale(width, height, 1),
+                                                       CATransform3DMakeTranslation(0, bottom * (1 - height), 0)))
+        }
+        let shape = CAKeyframeAnimation(keyPath: "transform")
+        shape.values = [blob(1, 1), blob(1.08, 0.9), blob(1.3, 0.62), blob(1.2, 0.74), blob(1.38, 0.54),
+                        blob(1.28, 0.62), blob(1.35, 0.55), blob(1.3, 0.6), blob(1.34, 0.56), blob(1.1, 0.86),
+                        blob(1, 1)]
+        shape.keyTimes = [0, 0.1, 0.26, 0.34, 0.45, 0.54, 0.64, 0.74, 0.82, 0.93, 1]
+        shape.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        shape.duration = duration
+        squasher.add(shape, forKey: "deflate")
+        // The face slides down with it, as eyes would on soft jelly.
+        let droop = CAKeyframeAnimation(keyPath: "transform.translation.y")
+        droop.values = [0, 0, size * 0.06, size * 0.1, size * 0.1, size * 0.05, 0]
+        droop.keyTimes = [0, 0.1, 0.3, 0.5, 0.78, 0.92, 1]
+        droop.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        droop.duration = duration
+        droop.isAdditive = true
+        face.add(droop, forKey: "deflateFace")
+        // A slow lean as it slumps, and back.
+        let slump = CAKeyframeAnimation(keyPath: "transform.rotation.z")
+        slump.values = [0, 0, 0.06, -0.04, 0.05, 0.03, 0]
+        slump.keyTimes = [0, 0.1, 0.3, 0.5, 0.65, 0.85, 1]
+        slump.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        slump.duration = duration
+        slump.isAdditive = true
+        tilter.add(slump, forKey: "deflateLean")
+    }
+
+    /// One jagged frame of the shock, held still, for drawing it without playing it.
+    func showZapFrame(front: CGFloat, phase: Int = 0) {
+        guard let base = fillMask.path, size > 0 else { return }
+        fillMask.path = NotchMascotGeometry.jagged(base, front: front, amplitude: size * 0.075, phase: phase)
+    }
+
+    /// The old cartoon shock. The body's outline is a zig-zag whose spikes
+    /// change sides every twentieth of a second, so it vibrates instead of
+    /// showing the smooth body behind it. The zig-zags climb from the feet to
+    /// the head over the first third, hold with the body stretching and
+    /// flashing yellow, then die away. Sparks flicker beside it.
+    private func electrocute(duration: TimeInterval) {
+        guard let base = fillMask.path, size > 0 else { return }
+        let step = 0.05
+        let frames = max(4, Int(duration / step))
+        let climb = duration * 0.3, fadeFrom = duration * 0.76
+        let amplitude = size * 0.075
+        let palette = look.palette
+        let shocked = [CGColor(red: 1, green: 0.98, blue: 0.7, alpha: 1), CGColor(red: 1, green: 0.8, blue: 0.1, alpha: 1)]
+        let normal = [palette.light.cgColor, palette.shade.cgColor]
+        var paths: [CGPath] = [], colors: [[CGColor]] = [], stretches: [NSValue] = [], shakes: [CGFloat] = []
+        var spark: [Float] = []
+        for frame in 0...frames {
+            let time = Double(frame) * step
+            let odd = frame % 2 == 1 && frame < frames
+            let front = min(1.25, CGFloat(time / climb) * 1.25)
+            let fade = time < fadeFrom ? 1 : max(0, 1 - CGFloat((time - fadeFrom) / (duration - fadeFrom)))
+            // Jagged on every frame, never the smooth body in between, which
+            // read as a second body. Only the last frame is smooth again.
+            paths.append(frame == frames ? base
+                         : NotchMascotGeometry.jagged(base, front: front, amplitude: amplitude * fade, phase: frame))
+            colors.append(odd && fade > 0.2 ? shocked : normal)
+            stretches.append(NSValue(caTransform3D: squashed(odd ? -0.14 * fade : 0.03 * fade)))
+            shakes.append(odd ? size * 0.03 * fade * (frame % 4 == 1 ? 1 : -1) : 0)
+            spark.append(odd && time > 0.08 && time < duration - 0.25 ? 1 : 0)
+        }
+        // Each frame holds until the next: two key times a hair apart carry
+        // the same value, so the flip is a cut, as on a drawn cel.
+        func held<T>(_ values: [T]) -> (values: [T], times: [NSNumber]) {
+            var out: [T] = [], times: [NSNumber] = []
+            for (index, value) in values.enumerated() {
+                let start = Double(index) / Double(values.count)
+                let end = Double(index + 1) / Double(values.count) - 0.0001
+                out += [value, value]
+                times += [NSNumber(value: start), NSNumber(value: max(start, min(1, end)))]
             }
-            bob.duration = reaction.length
-            bob.isAdditive = true
-            hopper.add(bob, forKey: "hop")
-            let sway = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-            sway.values = leans
-            sway.keyTimes = times
-            sway.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            sway.duration = reaction.length
-            sway.isAdditive = true
-            tilter.add(sway, forKey: "wobble")
-            let land = CAKeyframeAnimation(keyPath: "transform")
-            land.values = squashes.map { NSValue(caTransform3D: $0) }
-            land.keyTimes = times
-            land.duration = reaction.length
-            squasher.add(land, forKey: "squash")
+            times[times.count - 1] = 1
+            return (out, times)
+        }
+        let outline = held(paths)
+        let jag = CAKeyframeAnimation(keyPath: "path")
+        jag.values = outline.values
+        jag.keyTimes = outline.times
+        jag.duration = duration
+        fillMask.add(jag, forKey: "zapPath")
+        let tint = held(colors)
+        let flash = CAKeyframeAnimation(keyPath: "colors")
+        flash.values = tint.values
+        flash.keyTimes = tint.times
+        flash.duration = duration
+        fill.add(flash, forKey: "zapColors")
+        let stretch = held(stretches)
+        let pulse = CAKeyframeAnimation(keyPath: "transform")
+        pulse.values = stretch.values
+        pulse.keyTimes = stretch.times
+        pulse.duration = duration
+        squasher.add(pulse, forKey: "zapStretch")
+        let shake = held(shakes)
+        let jitter = CAKeyframeAnimation(keyPath: "transform.translation.x")
+        jitter.values = shake.values
+        jitter.keyTimes = shake.times
+        jitter.duration = duration
+        jitter.isAdditive = true
+        hopper.add(jitter, forKey: "zapShake")
+        let flicker = held(spark)
+        let bolts = CAKeyframeAnimation(keyPath: "opacity")
+        bolts.values = flicker.values
+        bolts.keyTimes = flicker.times
+        bolts.duration = duration
+        sparks.add(bolts, forKey: "zapSparks")
+    }
+
+    /// The headphones drop onto its head, stay for the song's first moments
+    /// and lift off again.
+    private func putOnHeadphones(duration: TimeInterval) {
+        let fade = CAKeyframeAnimation(keyPath: "opacity")
+        fade.values = [0, 1, 1, 0]
+        fade.keyTimes = [0, 0.1, 0.88, 1]
+        fade.duration = duration
+        headphones.add(fade, forKey: "headphones")
+        let drop = CAKeyframeAnimation(keyPath: "transform.translation.y")
+        drop.values = [-size * 0.4, size * 0.03, 0, 0, -size * 0.3]
+        drop.keyTimes = [0, 0.12, 0.18, 0.86, 1]
+        drop.timingFunctions = [CAMediaTimingFunction(name: .easeIn), CAMediaTimingFunction(name: .easeOut),
+                                CAMediaTimingFunction(name: .linear), CAMediaTimingFunction(name: .easeIn)]
+        drop.duration = duration
+        drop.isAdditive = true
+        headphones.add(drop, forKey: "headphonesDrop")
+    }
+
+    /// A few notes that rise from either side of its head and fade.
+    private func floatNotes(beginTime: CFTimeInterval) {
+        let glyphs = ["♪", "♫", "♪"]
+        let xs: [CGFloat] = [0.14, 0.86, 0.24]
+        let palette = look.palette
+        for (index, glyph) in glyphs.enumerated() {
+            let note = CATextLayer()
+            note.actions = Self.noActions
+            note.string = glyph
+            note.fontSize = size * 0.46
+            note.alignmentMode = .center
+            note.foregroundColor = palette.light.cgColor
+            note.contentsScale = root.contentsScale
+            note.opacity = 0
+            let width = size * 0.5
+            note.bounds = CGRect(x: 0, y: 0, width: width, height: size * 0.56)
+            let startX = xs[index] * size
+            let startY = size * 0.28
+            note.position = CGPoint(x: startX, y: startY)
+            root.addSublayer(note)
+            let delay = Double(index) * 0.28
+            let life = 0.85
+            let move = CAKeyframeAnimation(keyPath: "position")
+            let outward: CGFloat = xs[index] > 0.5 ? 1 : -1
+            move.values = [NSValue(point: CGPoint(x: startX, y: startY)),
+                           NSValue(point: CGPoint(x: startX + outward * size * 0.12, y: startY - size * 0.38)),
+                           NSValue(point: CGPoint(x: startX + outward * size * 0.04, y: startY - size * 0.75))]
+            move.keyTimes = [0, 0.5, 1]
+            move.beginTime = beginTime + delay
+            move.duration = life
+            move.fillMode = .both
+            let fade = CAKeyframeAnimation(keyPath: "opacity")
+            fade.values = [0, 1, 1, 0]
+            fade.keyTimes = [0, 0.18, 0.6, 1]
+            fade.beginTime = beginTime + delay
+            fade.duration = life
+            fade.fillMode = .both
+            note.add(move, forKey: "noteMove")
+            note.add(fade, forKey: "noteFade")
+            // Gone once its flight is over, so notes never pile up.
+            let lifetime = max(0, beginTime + delay + life - CACurrentMediaTime()) + 0.1
+            DispatchQueue.main.asyncAfter(deadline: .now() + lifetime) { [weak note] in note?.removeFromSuperlayer() }
         }
     }
 

@@ -313,6 +313,7 @@ if (( TEST )); then
         Sources/Nyx/Services/Notch/NotchMusicSupport.swift
         Sources/Nyx/UI/Notch/NotchDecorativeClock.swift
         Sources/Nyx/Services/Notch/NotchBrowserArtworkSupport.swift
+        Sources/Nyx/Services/Notch/NotchSiteIcon.swift
         Sources/Nyx/UI/Notch/NotchEqualizerBars.swift
         Sources/Nyx/UI/Notch/NotchScrollEdgeFade.swift
         Sources/Nyx/UI/Notch/NotchAgentAnimationView.swift

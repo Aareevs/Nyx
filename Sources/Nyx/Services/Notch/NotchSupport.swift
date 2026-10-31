@@ -2419,7 +2419,8 @@ struct NotchGeometry: Equatable {
     }
 
     var restingWingWidth: CGFloat {
-        let available = min(44, max(0, compactSideRoom ?? 0)).rounded(.down)
+        // 58 leaves room for the time and its AM/PM at a readable size.
+        let available = min(58, max(0, compactSideRoom ?? 0)).rounded(.down)
         return available >= 44 ? available : 0
     }
     var collapsed: CGSize {

@@ -136,6 +136,12 @@ enum NotchMascotReaction: String, CaseIterable {
     case ready
     /// Music started: smiling eyes and a bob to the beat.
     case groove
+    /// The battery ran low: it goes soft like slime, sagging into a wide flat
+    /// puddle that wobbles, then slowly puffs back up.
+    case deflate
+    /// The charger went in: the old cartoon shock, its outline turning to
+    /// zig-zags from the feet up while sparks fly.
+    case zap
 
     /// About how long it plays, so the companion stays out for all of it
     /// when it comes out over an activity to play it.
@@ -152,7 +158,9 @@ enum NotchMascotReaction: String, CaseIterable {
         case .bounce: return 1.0
         case .hush: return 1.0
         case .ready: return 1.0
-        case .groove: return 1.6
+        case .groove: return 1.8
+        case .zap: return 2.6
+        case .deflate: return 2.2
         }
     }
 }
@@ -179,8 +187,8 @@ enum NotchMascotMoment: String, CaseIterable, Identifiable {
         case .screenshot: return .flash
         case .micMuted: return .hush
         case .keepAwake: return .perk
-        case .charging: return .love
-        case .lowBattery: return .yawn
+        case .charging: return .zap
+        case .lowBattery: return .deflate
         case .unlocked: return .wakeUp
         }
     }
@@ -422,6 +430,119 @@ enum NotchMascotGeometry {
                      antenna: rounded(rect(0.475, 0.12, 0.05, 0.16), 0.025),
                      bulb: CGPath(ellipseIn: rect(0.43, 0.04, 0.14, 0.14), transform: nil),
                      visor: rounded(rect(0.20, 0.44, 0.60, 0.38), 0.15))
+    }
+
+    /// Headphones for a song: a band over the head's top and a cup at each
+    /// side, one filled outline in the unit square. A robot's head sits lower,
+    /// so its band rides lower too.
+    static func headphones(size: CGFloat, robot: Bool) -> CGPath {
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * size, y: y * size) }
+        let peak: CGFloat = robot ? 0.17 : 0.03
+        let sideY: CGFloat = robot ? 0.58 : 0.5
+        let band = CGMutablePath()
+        band.move(to: point(0.08, sideY))
+        band.addCurve(to: point(0.92, sideY), control1: point(0.08, peak - 0.1), control2: point(0.92, peak - 0.1))
+        let stroked = band.copy(strokingWithWidth: size * 0.06, lineCap: .round, lineJoin: .round, miterLimit: 4)
+        let path = CGMutablePath()
+        path.addPath(stroked)
+        let cupHeight = size * 0.28, cupWidth = size * 0.14
+        for x in [0.03, 0.83] as [CGFloat] {
+            path.addRoundedRect(in: CGRect(x: x * size, y: sideY * size - cupHeight / 2, width: cupWidth, height: cupHeight),
+                                cornerWidth: cupWidth * 0.45, cornerHeight: cupWidth * 0.45)
+        }
+        return path
+    }
+
+    /// `path`'s outline redrawn as zig-zags, the way an old cartoon draws a
+    /// body with current going through it. The spikes exist only below
+    /// `front`, a height from the bottom as a share of the outline's own, so
+    /// raising it sends them up from the feet to the head. `phase` flips which
+    /// points are the spikes, so two frames of it vibrate against each other.
+    static func jagged(_ path: CGPath, front: CGFloat, amplitude: CGFloat, phase: Int = 0) -> CGPath {
+        let bounds = path.boundingBox
+        guard bounds.height > 0, bounds.width > 0, amplitude > 0 else { return path }
+        // The outline as a polyline, curves cut into short straight steps.
+        var points: [CGPoint] = []
+        var current = CGPoint.zero, start = CGPoint.zero
+        path.applyWithBlock { element in
+            let p = element.pointee.points
+            switch element.pointee.type {
+            case .moveToPoint:
+                current = p[0]; start = current; points.append(current)
+            case .addLineToPoint:
+                current = p[0]; points.append(current)
+            case .addQuadCurveToPoint:
+                let c = p[0], e = p[1]
+                for step in 1...10 {
+                    let t = CGFloat(step) / 10, u = 1 - t
+                    points.append(CGPoint(x: u * u * current.x + 2 * u * t * c.x + t * t * e.x,
+                                          y: u * u * current.y + 2 * u * t * c.y + t * t * e.y))
+                }
+                current = e
+            case .addCurveToPoint:
+                let c1 = p[0], c2 = p[1], e = p[2]
+                for step in 1...10 {
+                    let t = CGFloat(step) / 10, u = 1 - t
+                    points.append(CGPoint(
+                        x: u * u * u * current.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * e.x,
+                        y: u * u * u * current.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * e.y))
+                }
+                current = e
+            case .closeSubpath:
+                current = start
+            @unknown default: break
+            }
+        }
+        guard points.count > 3 else { return path }
+        // Even steps along it, so the spikes are as regular as a drawn zig-zag.
+        var lengths: [CGFloat] = [0]
+        for index in 1..<points.count {
+            lengths.append(lengths[index - 1] + hypot(points[index].x - points[index - 1].x,
+                                                      points[index].y - points[index - 1].y))
+        }
+        let closing = hypot(points[0].x - points[points.count - 1].x, points[0].y - points[points.count - 1].y)
+        let perimeter = lengths[lengths.count - 1] + closing
+        guard perimeter > 0 else { return path }
+        var count = max(16, Int((perimeter / max(1, amplitude * 1.1)).rounded()))
+        count += count % 2
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let result = CGMutablePath()
+        var segment = 0
+        for index in 0..<count {
+            let distance = perimeter * CGFloat(index) / CGFloat(count)
+            while segment < lengths.count - 1 && lengths[segment + 1] < distance { segment += 1 }
+            let a = points[segment]
+            let b = segment + 1 < points.count ? points[segment + 1] : points[0]
+            let span = (segment + 1 < points.count ? lengths[segment + 1] : perimeter) - lengths[segment]
+            let t = span > 0 ? (distance - lengths[segment]) / span : 0
+            let point = CGPoint(x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t)
+            // 0 at the bottom, 1 at the top; the outline's y grows downward.
+            let height = (bounds.maxY - point.y) / bounds.height
+            let weight = min(1, max(0, (front - height) / 0.12))
+            let dx = point.x - center.x, dy = point.y - center.y
+            let norm = max(0.001, hypot(dx, dy))
+            let push = ((index + phase) % 2 == 0 ? amplitude : -amplitude * 0.35) * weight
+            let spiked = CGPoint(x: point.x + dx / norm * push, y: point.y + dy / norm * push)
+            if index == 0 { result.move(to: spiked) } else { result.addLine(to: spiked) }
+        }
+        result.closeSubpath()
+        return result
+    }
+
+    /// Three small bolts at the sides and top, for the sparks of a shock.
+    static func sparks(size: CGFloat) -> CGPath {
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * size, y: y * size) }
+        let path = CGMutablePath()
+        let bolts: [[CGPoint]] = [
+            [point(0.00, 0.30), point(0.09, 0.40), point(0.03, 0.47), point(0.12, 0.60)],
+            [point(1.00, 0.34), point(0.91, 0.44), point(0.97, 0.51), point(0.88, 0.64)],
+            [point(0.74, 0.00), point(0.68, 0.10), point(0.76, 0.14), point(0.70, 0.24)],
+        ]
+        for bolt in bolts {
+            path.move(to: bolt[0])
+            for point in bolt.dropFirst() { path.addLine(to: point) }
+        }
+        return path
     }
 
     /// The highlight, an ellipse leaning with the body's curve.
@@ -1192,7 +1313,7 @@ enum NotchMascotSupport {
     /// How it takes the Mac's power changing: glad when the charger goes in,
     /// cheering once the battery is full, and tired when it runs low.
     static func powerReaction(pluggedIn: Bool, charged: Bool, low: Bool) -> NotchMascotReaction? {
-        pluggedIn ? .love : charged ? .celebrate : low ? .yawn : nil
+        pluggedIn ? .zap : charged ? .celebrate : low ? .deflate : nil
     }
 
     /// Whether the event the island counted down to, as `before`, began as

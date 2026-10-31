@@ -3248,7 +3248,7 @@ enum NotchTests {
         namedMusicStripChecks(suite, compactMusic: compactMusic, screen: menuScreen)
         suite.expect(constrained.compactMusicGeometry.compactActivitySize.height == constrained.menuBarHeight,
                "crowded music retains the same thin silhouette")
-        suite.expect(roomy.musicStrip.width <= 380 && roomy.restingWingWidth == 44,
+        suite.expect(roomy.musicStrip.width <= 380 && roomy.restingWingWidth == 58,
                "music and idle indicators both respect the same measured menu gap")
         let simulated = NotchGeometry(screen: menuScreen, safeAreaTop: 0, cameraWidth: 0, menuBarHeight: 22)
         suite.expect(simulated.frame(for: simulated.collapsed).maxY == menuScreen.maxY
