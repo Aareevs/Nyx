@@ -11,6 +11,7 @@ struct NotchAgentsSettingsControls: View {
     @AppStorage(DefaultsKey.notchAgentsOpenCode) private var opencode = true
     @AppStorage(DefaultsKey.notchAgentsCopilot) private var copilot = true
     @AppStorage(DefaultsKey.notchAgentsGemini) private var gemini = true
+    @AppStorage(DefaultsKey.notchAgentsGeminiLive) private var geminiLive = true
     @AppStorage(DefaultsKey.notchAgentsCardOrder) private var cardOrder = ""
     @AppStorage(DefaultsKey.notchAgentsHiddenCards) private var hiddenCards = ""
     @AppStorage(DefaultsKey.notchAgentsLimitDisplay) private var limitDisplay = NotchAgentLimitDisplay.used.rawValue
@@ -48,6 +49,12 @@ struct NotchAgentsSettingsControls: View {
             providerRow(.opencode, isOn: $opencode)
             providerRow(.copilot, isOn: $copilot)
             providerRow(.gemini, isOn: $gemini)
+            if gemini {
+                // Antigravity's usage is still counted with this off; only its
+                // "working" mark and Now card leave the island.
+                switchRow("bolt.badge.clock", "Show Antigravity as working", isOn: $geminiLive)
+                    .padding(.leading, settingsRowTextInset)
+            }
             if claude { ClaudeAccountSettings() }
             if codex { CodexAccountsSettings() }
 
@@ -162,7 +169,7 @@ struct NotchAgentsSettingsControls: View {
         }
         // Cards and agents set the page's height, and the live reading the
         // closed island's width, which the island follows.
-        .onChange(of: [cardOrder, hiddenCards, String(claude), String(codex), String(opencode), String(copilot), String(gemini),
+        .onChange(of: [cardOrder, hiddenCards, String(claude), String(codex), String(opencode), String(copilot), String(gemini), String(geminiLive),
                        String(liveActivity), readout, limitDisplay, limitFocus]) { _, _ in
             NotchService.shared.syncWithPreferences()
         }

@@ -106,16 +106,22 @@ enum AgentGeminiSessions {
         guard prepare("file:\(escaped)?mode=ro") || prepare("file:\(escaped)?immutable=1") else { return }
         sqlite3_bind_int64(statement, 1, Int64(cursor.offset))
         let conversation = ((cursor.path as NSString).lastPathComponent as NSString).deletingPathExtension
-        // Every step carries a status, 3 once it is done: while one is not, the
-        // agent is at work, and when all are the task is over. A file left
-        // untouched for a while is not at work whatever its steps say.
+        // Every step carries a status, 3 once it is done. A few old steps stay
+        // in other states for good (6 and 7 are the ones seen), so only the
+        // rest count as the agent being at work. Between two steps nothing is
+        // running for a moment while the file is still being written, so a
+        // write in the last few seconds counts as work as well. Once all of
+        // that is quiet, the task is over.
         var steps: OpaquePointer?
         defer { sqlite3_finalize(steps) }
-        if sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM steps WHERE status != 3", -1, &steps, nil) == SQLITE_OK,
+        if sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM steps WHERE status NOT IN (3, 6, 7)", -1, &steps, nil) == SQLITE_OK,
            sqlite3_step(steps) == SQLITE_ROW {
-            let unfinished = sqlite3_column_int64(steps, 0) > 0
-            let recent = Date().timeIntervalSince1970 - cursor.modified.timeIntervalSince1970 < 180
-            let state: [String: Any] = ["gemini": true, "phase": unfinished && recent ? "active" : "idle",
+            let running = sqlite3_column_int64(steps, 0) > 0
+            let quiet = Date().timeIntervalSince1970 - cursor.modified.timeIntervalSince1970
+            // Settings can switch the working mark off for good, whatever the file says.
+            let shows = UserDefaults.standard.object(forKey: DefaultsKey.notchAgentsGeminiLive) as? Bool ?? true
+            let working = shows && ((running && quiet < 90) || quiet < 15)
+            let state: [String: Any] = ["gemini": true, "phase": working ? "active" : "idle",
                                         "ts": cursor.modified.timeIntervalSince1970, "session": conversation]
             if let encoded = try? JSONSerialization.data(withJSONObject: state) { line(encoded) }
         }

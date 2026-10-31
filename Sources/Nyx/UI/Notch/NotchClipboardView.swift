@@ -392,6 +392,9 @@ struct NotchClipboardView: View {
                     if entry.kind == .image, AppFeature.screenshot.isAvailable {
                         NotchIconButton(symbol: "pencil", title: text.edit) { history.editImage(entry) }
                     }
+                    if entry.kind == .text, canEditInScratchpad {
+                        NotchIconButton(symbol: "pencil", title: text.edit) { editInScratchpad(entry) }
+                    }
                     NotchIconButton(symbol: copiedID == entry.id ? "checkmark" : "doc.on.doc",
                                     title: copiedID == entry.id ? text.copied : text.copy) { copy(entry) }
                     NotchIconButton(symbol: entry.isPinned ? "pin.fill" : "pin",
@@ -453,6 +456,9 @@ struct NotchClipboardView: View {
                 }
                 if entry.kind == .image, AppFeature.screenshot.isAvailable {
                     NotchIconButton(symbol: "pencil", title: text.edit) { history.editImage(entry) }
+                }
+                if entry.kind == .text, canEditInScratchpad {
+                    NotchIconButton(symbol: "pencil", title: text.edit) { editInScratchpad(entry) }
                 }
                 NotchIconButton(symbol: copiedID == entry.id ? "checkmark" : "doc.on.doc",
                                 title: copiedID == entry.id ? text.copied : text.copy) { copy(entry) }
@@ -556,6 +562,21 @@ struct NotchClipboardView: View {
             if !editing { searching = true }
             return false
         }
+    }
+
+    /// A text entry opens in the Scratchpad, on a new tab so a note already
+    /// there stays as it was. The tab's own copy button puts the result back
+    /// on the clipboard.
+    private var canEditInScratchpad: Bool { AppFeature.scratchpad.isAvailable }
+
+    private func editInScratchpad(_ entry: ClipboardHistoryEntry) {
+        let pad = ScratchpadService.shared
+        // A full Scratchpad has no tab to spare, and the text must not
+        // replace a note someone is keeping there.
+        guard canEditInScratchpad, pad.loadForEmbedding(), pad.canCreatePad else { NSSound.beep(); return }
+        pad.createPad(defaultName: FeatureStrings.scratchpad(l10n.language).pageTitle)
+        pad.text = entry.text
+        service.select(.scratchpad)
     }
 
     private func activate(_ entry: ClipboardHistoryEntry) {

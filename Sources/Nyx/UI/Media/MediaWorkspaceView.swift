@@ -297,10 +297,12 @@ struct MediaWorkspaceView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: compact ? 9 : 12) {
+            // The action and its result sit right under the file, so they never
+            // fall below the fold behind a long list of options.
             fileCard
-            optionsCard
             actionRow
             statusCard
+            optionsCard
         }
     }
 
@@ -373,22 +375,26 @@ struct MediaWorkspaceView: View {
         VStack(alignment: .leading, spacing: 9) {
             inputDropTarget
 
-            HStack(spacing: 7) {
-                Text(l10n.s.mediaOutput)
-                    .font(.system(size: compact ? 9.5 : 10.5, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Text(outputURL?.lastPathComponent ?? l10n.s.mediaOutputAutomatic)
-                    .font(.system(size: compact ? 10 : 11))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer(minLength: 0)
-                Button {
-                    chooseOutput()
-                } label: {
-                    Label(l10n.s.mediaChooseOutput, systemImage: "folder")
+            // Pictures show their output name in the preview and pick a
+            // destination under More options, so the file card stays one box.
+            if selectedTool != .imageCompressor {
+                HStack(spacing: 7) {
+                    Text(l10n.s.mediaOutput)
+                        .font(.system(size: compact ? 9.5 : 10.5, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text(outputURL?.lastPathComponent ?? l10n.s.mediaOutputAutomatic)
+                        .font(.system(size: compact ? 10 : 11))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer(minLength: 0)
+                    Button {
+                        chooseOutput()
+                    } label: {
+                        Label(l10n.s.mediaChooseOutput, systemImage: "folder")
+                    }
+                    .controlSize(.small)
+                    .disabled(inputURLs.isEmpty || isRunning)
                 }
-                .controlSize(.small)
-                .disabled(inputURLs.isEmpty || isRunning)
             }
             if selectedTool == .imageCompressor, inputURLs.count > 1 {
                 Toggle(imageText.saveInSubfolder, isOn: $imageSaveInSubfolder)
@@ -449,6 +455,13 @@ struct MediaWorkspaceView: View {
                 }
                 if imageMoreOptionsExpanded {
                     VStack(alignment: .leading, spacing: 10) {
+                        Button {
+                            chooseOutput()
+                        } label: {
+                            Label(l10n.s.mediaChooseOutput, systemImage: "folder")
+                        }
+                        .controlSize(.small)
+                        .disabled(inputURLs.isEmpty || isRunning)
                         imageProfileRow
                         // PDF output never carries EXIF (the image is re-encoded
                         // into the document), so the toggle would be a dead control.
@@ -485,6 +498,7 @@ struct MediaWorkspaceView: View {
                 run()
             } label: {
                 Label(actionTitle, systemImage: selectedTool == .textExtractor ? "text.viewfinder" : "play.fill")
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .disabled(inputURLs.isEmpty || isRunning)

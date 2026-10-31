@@ -184,8 +184,8 @@ private struct NotchAgentChip: View {
 
 // MARK: Limits
 
-/// The share keeps its meaning at every width. A reset countdown uses spare
-/// room, otherwise its full date remains in the row's tooltip.
+/// The share keeps its meaning at every width. A reset countdown sits beside
+/// it when there is room, and on a line of its own when there is not.
 private struct NotchAgentLimitReading: View {
     let title: String
     let share: String
@@ -207,10 +207,23 @@ private struct NotchAgentLimitReading: View {
                 Spacer(minLength: 2)
                 reading
             }
-            HStack(spacing: 5) {
-                heading.minimumScaleFactor(0.8)
-                Spacer(minLength: 2)
-                reading
+            // Too narrow to share a row, the reset time drops to its own line
+            // rather than disappearing.
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 5) {
+                    heading.minimumScaleFactor(0.8)
+                    Spacer(minLength: 2)
+                    reading
+                }
+                if let countdown {
+                    Label(countdown, systemImage: "arrow.clockwise")
+                        .labelStyle(NotchAgentInlineLabel())
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .accessibilityIdentifier("notch.agentLimitCountdown")
+                }
             }
         }
     }
@@ -356,7 +369,8 @@ private struct NotchAgentLimitsCard: View {
         let tint = agentLimitTint(provider, usedFraction: window.usedFraction)
         let remaining = display == .remaining
         let fraction = remaining ? window.remainingFraction : window.usedFraction
-        let reset = AgentLimitSupport.displayedReset(window, now: now).map {
+        // The reset time is shown for Claude's session and weekly limits only.
+        let reset = provider != .claude ? nil : AgentLimitSupport.displayedReset(window, now: now).map {
             (window.estimatedResetsAt == nil ? "" : "≈ ") + countdown(to: $0) + " · " + clock($0)
         }
         return VStack(alignment: .leading, spacing: 2) {

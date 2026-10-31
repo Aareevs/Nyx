@@ -61,17 +61,17 @@ enum NotchAgentLimitReadingTests {
                 }
             }
         }
-        for (width, showsCountdown): (CGFloat, Bool) in [(183, false), (320, true)] {
+        for width: CGFloat in [183, 320] {
             let host = NSHostingView(rootView: NotchAgentLimitReading(
                 title: "Week · Sonnet", share: "100% used", countdown: "≈ 6d 23h", tint: .white)
-                .frame(width: width, height: 24))
+                .frame(width: width, height: 40))
             window.contentView = host
-            window.setContentSize(CGSize(width: width, height: 24))
+            window.setContentSize(CGSize(width: width, height: 40))
             settle(host)
             let countdown = elements(host)
                 .filter { $0.accessibilityIdentifier?() == "notch.agentLimitCountdown" }
-            suite.expect(countdown.isEmpty != showsCountdown,
-                         "a reset countdown gives way only when the complete reading needs its room at \(width) pt")
+            suite.expect(!countdown.isEmpty,
+                         "a reset countdown never disappears: beside the share when it fits, below it when not, at \(width) pt")
         }
     }
 
