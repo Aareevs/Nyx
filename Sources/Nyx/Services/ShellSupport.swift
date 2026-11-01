@@ -127,7 +127,6 @@ enum Sudoers {
     // extra password prompt.
     private static let legacyRulePaths = [
         "/etc/sudoers.d/nyx-utils-clamshell",
-        "/etc/sudoers.d/vorss-clamshell",
     ]
 
     /// Serializes native writes and read/reapply probes. Authorization runs

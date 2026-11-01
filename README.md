@@ -146,6 +146,8 @@ Reorder or hide panel sections, choose a compact layout, and export settings to 
 3. Open Nyx. The first time, macOS blocks it, because Nyx is not signed with a paid Apple Developer ID. Go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**.
 4. Allow only the permissions the features you want ask for.
 
+Optional, to see what plays next from YouTube: in your browser's menu bar turn on **View → Developer → Allow JavaScript from Apple Events** (Safari: **Develop → Developer Settings**), then switch on the queue lookup in **Settings → Dynamic Island → Music**. Spotify only needs you to sign in from the Up next page.
+
 To update, download the new `.dmg` and drag Nyx into Applications again, replacing the old one. Your settings and permissions stay. macOS may ask for **Open Anyway** once more.
 
 ## Uninstall
@@ -202,8 +204,11 @@ Nyx started from the open-source [Vorssaint](https://github.com/vorssaint/vorssa
 - **Spotify playlists in the island.** Sign in once and browse your playlists, open one, and tap a song to play it on Spotify without opening the app. The login uses PKCE, so no secret is stored, and the login is kept in a private file only your account can read. **Choosing songs needs a Spotify Premium account.** Spotify only lets apps pick what plays for Premium users, so on a free account you can browse your playlists but not play from them.
 - **Time and weather on the island.** The closed island shows the time on the left and the weather, with an emoji, on the right. The weather uses your approximate location if you allow it (Open-Meteo, no account).
 - **Calculator in the island.** A new section with three modes: basic arithmetic (powers, roots, fractions), trigonometry (sin, cos, tan, csc, sec, cot and their inverses, in degrees or radians), and calculus (derivatives, integrals, complex numbers, factorials). Shortcut ⌥⌘K.
+- **Alarms in the island.** A new section for alarms that ring from the island: set a time with scroll wheels, add a label, and repeat on the days you pick, or ring once. A ringing alarm plays a sound and stays on the closed island with a **Stop** button until you stop it, and the Alarms page can snooze it for 5 minutes. Shortcut ⌥⌘L. Nyx has to be running for an alarm to ring.
+- **Add events to Calendar.** The island's Calendar page has a **+** button that opens a small form for a title, date and time, all day, and which calendar to save to. Events go into the Calendar app, so they sync as usual.
+- **Edit clipboard text in Scratchpad.** Text entries in the island's Clipboard have a pen button that opens the text in Scratchpad.
 - **Menu bar folder.** Collapse the menu bar icons you rarely use into one folder, and click through to them without leaving the bar.
-- **Antigravity usage.** The AI agents section reads Antigravity's conversations and shows its token use, models and cost, with its own card and the Gemini mark.
+- **Antigravity usage.** The AI agents section reads Antigravity's conversations and shows its token use, models and cost, with its own card and the Gemini mark. Also, in settings can turn off showing Antigravity as working.
 - **Claude limits fixed up.** Claude plan limits are read more reliably, and limit bars now default to showing how much you have used.
 - **Copy image** on Recent Captures and on the Shelf, so a screenshot goes straight to your clipboard.
 - **Downloads show their date.** Each finished download in the island lists when it was saved.

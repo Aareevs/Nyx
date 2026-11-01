@@ -94,7 +94,7 @@ legacy_identity_installed() {
 # actually relies on. When no identity is installed, create the stable local one
 # up front instead of falling through to ad-hoc — setup-signing.sh is free,
 # offline and idempotent. Gating on the install rather than the variant keeps
-# this off CI, where neither ci.yml nor release.yml passes --install.
+# this off CI, where ci.yml does not pass --install.
 if (( DEV || INSTALL )) && [[ -z "$(developer_id_identity)" ]] \
     && ! legacy_identity_installed; then
     echo "▸ No signing identity installed; creating the stable local one…"
@@ -212,13 +212,13 @@ discard_test_preferences() {
     # cfprefsd can recreate an emptied domain after the first removal. Require
     # two quiet checks, but keep a hard limit so persistent failures still fail CI.
     for attempt in {1..10}; do
-        for name in "vorss.tests." "com.nyx.tests."; do
+        for name in "com.nyx.tests."; do
             rm -f "$preferences"/$name*.plist(N)
         done
         rm -f "$preferences/metrics-tests.plist"
         sleep 0.2
         survivors=$(find "$preferences" -maxdepth 1 \
-            \( -name "vorss.tests.*.plist" -o -name "com.nyx.tests.*.plist" \
+            \( -name "com.nyx.tests.*.plist" \
                -o -name "metrics-tests.plist" \) 2>/dev/null | wc -l | tr -d ' ')
         if [[ "$survivors" == "0" ]]; then
             quiet_passes=$((quiet_passes + 1))
@@ -262,6 +262,8 @@ if (( TEST )); then
         Sources/Nyx/Core/NotchFilesStrings.swift
         Sources/Nyx/Core/NotchWatchStrings.swift
         Sources/Nyx/Core/NotchCalculatorStrings.swift
+        Sources/Nyx/Core/NotchAlarmStrings.swift
+        Sources/Nyx/Services/Notch/NotchAlarmSupport.swift
         Sources/Nyx/Services/Notch/NotchWatchSupport.swift
         Sources/Nyx/Core/NotchMascotStrings.swift
         Sources/Nyx/Services/Notch/NotchMascotSupport.swift
@@ -831,7 +833,7 @@ if (( INSTALL )); then
     # Only an official install replaces the pre-rename official apps. The
     # Developer variant must coexist with them just as it does with Nyx.
     if (( ! DEV )); then
-        for legacy in "Vorss:Vorss" "Nyx Utils:NyxUtils"; do
+        for legacy in "Nyx Utils:NyxUtils"; do
             name="${legacy%%:*}"; proc="${legacy##*:}"
             if [[ -d "/Applications/$name.app" ]]; then
                 stop_process "$proc"

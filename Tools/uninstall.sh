@@ -132,7 +132,7 @@ done
 # check on the setting alone would blame Nyx for a `pmset disablesleep 1`
 # that somebody else, or the user, had set.
 sleep_was_ours=0
-[[ "$(defaults read "$BUNDLE" vorssDisabledSleep 2>/dev/null)" == "1" ]] && sleep_was_ours=1
+[[ "$(defaults read "$BUNDLE" nyxDisabledSleep 2>/dev/null)" == "1" ]] && sleep_was_ours=1
 
 # Whether Space rearranging is still owed back. `--uninstall` clears this
 # marker once the setting is back, so one still here means that restore failed
@@ -183,7 +183,7 @@ rm -f "$HOME/Library/Preferences/ByHost/$BUNDLE".*.plist(N)
 # same files the app looks for. Each path is checked on its own. zsh passes an
 # unquoted string to a command as a single word, and one `ls` over all three
 # fails as soon as any of them is missing.
-RULES=(/etc/sudoers.d/nyx-clamshell /etc/sudoers.d/nyx-utils-clamshell /etc/sudoers.d/vorss-clamshell)
+RULES=(/etc/sudoers.d/nyx-clamshell /etc/sudoers.d/nyx-utils-clamshell)
 found_rules=()
 for rule in "${RULES[@]}"; do
     [[ -e "$rule" ]] && found_rules+=("$rule")

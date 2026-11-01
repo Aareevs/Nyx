@@ -59,7 +59,7 @@ enum CleanerSupport {
             || wrapped.contains(".developer.apple.") || wrapped.contains(".is.workflow.") {
             return true
         }
-        if lowered == "com.apple" || lowered.hasPrefix("vorss.") {
+        if lowered == "com.apple" {
             return true
         }
         // A domain ends at a dot: com.segment covers com.segment.analytics,

@@ -658,9 +658,6 @@ struct AboutSettings: View {
             Text(AppInfo.copyright)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
-            Text("Based on [Vorssaint](https://github.com/vorssaint/vorssaint-utils), licensed GPL-3.0.")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
