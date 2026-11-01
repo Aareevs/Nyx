@@ -42,8 +42,8 @@ enum DefaultsKey {
     static let statusItemPlacementGeneration = "statusItemPlacementGeneration"
     static let hasOnboarded = "hasOnboarded"
     static let menuBarFolderEnabled = "menuBarFolderEnabled" // folder icon that hides other menu bar icons
-    static let sleepDisabledFlag = "vorssDisabledSleep"   // internal guard for pmset disablesleep
-    static let dimmedDisplaySavedBrightness = "vorssDimmedDisplaySavedBrightness" // internal guard for closed-lid screen dimming recovery
+    static let sleepDisabledFlag = "nyxDisabledSleep"   // internal guard for pmset disablesleep
+    static let dimmedDisplaySavedBrightness = "nyxDimmedDisplaySavedBrightness" // internal guard for closed-lid screen dimming recovery
     static let scrollInverterEnabled = "scrollInverterEnabled"
     static let scrollInverterHorizontalEnabled = "scrollInverterHorizontalEnabled"
     static let scrollHorizontalEnabled = "scrollHorizontalEnabled"
@@ -824,11 +824,16 @@ enum DefaultsKey {
     static let notchBrowserCovers = "notchBrowserCovers"
     static let notchLiveEqualizer = "notchLiveEqualizer"
     static let notchQueueEnabled = "notchQueueEnabled"
+    static let notchQueueOnline = "notchQueueOnline"
+    static let spotifyPlaylistOrder = "spotifyPlaylistOrder" // [String] of playlist ids, as the user arranged them
     static let notchDownloadsEnabled = "notchDownloadsEnabled"
     static let notchDownloadsFolderBookmark = "notchDownloadsFolderBookmark"
     // Watch: any part of any window read live in the island.
     static let notchWatchEnabled = "notchWatchEnabled"
     static let notchCalculatorEnabled = "notchCalculatorEnabled"
+    static let notchAlarmsEnabled = "notchAlarmsEnabled"
+    static let notchAlarmsSound = "notchAlarmsSound"
+    static let notchAlarms = "notchAlarms" // JSON of [NotchAlarm]
     static let notchCalculatorMode = "notchCalculatorMode" // CalculatorMode.rawValue
     static let notchCalculatorAngle = "notchCalculatorAngle" // CalculatorAngle.rawValue
     static let notchWatchSound = "notchWatchSound"
@@ -1409,9 +1414,12 @@ enum Defaults {
         DefaultsKey.notchBrowserCovers: false,
         DefaultsKey.notchLiveEqualizer: false,
         DefaultsKey.notchQueueEnabled: true,
+        DefaultsKey.notchQueueOnline: false,
         DefaultsKey.notchDownloadsEnabled: true,
         DefaultsKey.notchWatchEnabled: true,
         DefaultsKey.notchCalculatorEnabled: true,
+        DefaultsKey.notchAlarmsEnabled: true,
+        DefaultsKey.notchAlarmsSound: true,
         DefaultsKey.notchCalculatorMode: "basic",
         DefaultsKey.notchCalculatorAngle: CalculatorAngle.degrees.rawValue,
         DefaultsKey.notchWatchSound: true,

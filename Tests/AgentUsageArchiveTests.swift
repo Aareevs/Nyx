@@ -25,7 +25,7 @@ enum AgentUsageArchiveTests {
     ]
 
     static func run(_ suite: TestSuite) {
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-archive-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-archive-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }
         do { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
         catch { suite.expect(false, "the archive fixture creates its folder: \(error)"); return }
@@ -458,7 +458,7 @@ enum AgentUsageArchiveSaveTests {
 
         // A log replaced while the app ran still counts what its old contents
         // gave, so it is left out and the next launch reads it as rewritten.
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-archive-save-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-archive-save-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let keptLog = folder.appending(path: "kept.jsonl")

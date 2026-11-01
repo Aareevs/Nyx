@@ -14,6 +14,8 @@ struct NotchCalendarView: View {
     @State private var selectedDay: Date?
     /// The strip's month grid, in place of the strip and the cards.
     @State private var showingMonth = false
+    /// The form for adding an event, in place of the strip, grid and agenda.
+    @State private var adding = false
     private var text: NotchCalendarStrings { FeatureStrings.notchCalendar(l10n.language) }
     /// A month grid needs six rows beside an agenda; anything shorter shows
     /// the week as a strip above a vertical agenda.
@@ -24,7 +26,9 @@ struct NotchCalendarView: View {
             if permissions.calendarAccess == .fullAccess {
                 TimelineView(.everyMinute) { context in
                     Group {
-                        if showsMonth {
+                        if adding {
+                            NotchCalendarEventForm(day: selectedDay ?? context.date, text: text) { adding = false }
+                        } else if showsMonth {
                             HStack(alignment: .top, spacing: 16) {
                                 ScrollView { monthView(now: context.date) }
                                     .scrollIndicators(.automatic)
@@ -50,6 +54,23 @@ struct NotchCalendarView: View {
                         if selectedDay == nil { focus = context.date }
                     }
                 }
+                // Always within reach, whatever room the top row leaves.
+                .overlay(alignment: .bottomTrailing) {
+                    if !adding && !preview {
+                        Button { adding = true } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 34, height: 34)
+                                .background(.white.opacity(0.18), in: Circle())
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(NotchButtonStyle(cornerRadius: 17))
+                        .help(text.newEvent)
+                        .accessibilityLabel(text.newEvent)
+                        .padding(4)
+                    }
+                }
                 // The month's name and the way through it head the page from
                 // the island's top row, the same in all three layouts.
                 .notchBand { monthTitle } trailing: { navigation }
@@ -68,9 +89,11 @@ struct NotchCalendarView: View {
             if !Calendar.current.isDate(previous, equalTo: date, toGranularity: .month) { calendar.showMonth(date) }
         }
         // Escape returns from the month grid to the strip before the island closes.
-        .onChange(of: showingMonth && !showsMonth) { _, showing in
+        .onChange(of: adding || (showingMonth && !showsMonth)) { _, showing in
             guard !preview else { return }
-            NotchService.shared.setPageLayer(.calendar, close: showing ? { showingMonth = false } : nil)
+            NotchService.shared.setPageLayer(.calendar, close: showing ? {
+                if adding { adding = false } else { showingMonth = false }
+            } : nil)
         }
         .onDisappear {
             if ownsMonth { calendar.showMonth(nil) }

@@ -79,7 +79,7 @@ enum SmoothScrollRoutingTests {
 
     static func run(_ suite: TestSuite) {
         _ = NSApplication.shared
-        let domain = "vorss.tests.smooth-routing.\(UUID().uuidString)"
+        let domain = "com.nyx.tests.smooth-routing.\(UUID().uuidString)"
         let defaults = Foundation.UserDefaults(suiteName: domain)!
         DefaultsStore.standard = defaults
         defaults.set(40, forKey: DefaultsKey.smoothScrollStep)

@@ -788,7 +788,7 @@ final class NotchMascotRig: NSObject {
         fade.duration = duration
         headphones.add(fade, forKey: "headphones")
         let drop = CAKeyframeAnimation(keyPath: "transform.translation.y")
-        drop.values = [-size * 0.4, size * 0.03, 0, 0, -size * 0.3]
+        drop.values = [-size * 0.22, size * 0.03, 0, 0, -size * 0.18]
         drop.keyTimes = [0, 0.12, 0.18, 0.86, 1]
         drop.timingFunctions = [CAMediaTimingFunction(name: .easeIn), CAMediaTimingFunction(name: .easeOut),
                                 CAMediaTimingFunction(name: .linear), CAMediaTimingFunction(name: .easeIn)]
@@ -800,21 +800,23 @@ final class NotchMascotRig: NSObject {
     /// A few notes that rise from either side of its head and fade.
     private func floatNotes(beginTime: CFTimeInterval) {
         let glyphs = ["♪", "♫", "♪"]
-        let xs: [CGFloat] = [0.14, 0.86, 0.24]
+        // Kept inside the rig's own square: it can stand at the island's very
+        // edge, where anything that drifts past the square is cut off.
+        let xs: [CGFloat] = [0.2, 0.8, 0.3]
         let palette = look.palette
         for (index, glyph) in glyphs.enumerated() {
             let note = CATextLayer()
             note.actions = Self.noActions
             note.string = glyph
-            note.fontSize = size * 0.46
+            note.fontSize = size * 0.34
             note.alignmentMode = .center
             note.foregroundColor = palette.light.cgColor
             note.contentsScale = root.contentsScale
             note.opacity = 0
-            let width = size * 0.5
-            note.bounds = CGRect(x: 0, y: 0, width: width, height: size * 0.56)
+            let width = size * 0.34
+            note.bounds = CGRect(x: 0, y: 0, width: width, height: size * 0.42)
             let startX = xs[index] * size
-            let startY = size * 0.28
+            let startY = size * 0.62
             note.position = CGPoint(x: startX, y: startY)
             root.addSublayer(note)
             let delay = Double(index) * 0.28
@@ -822,8 +824,8 @@ final class NotchMascotRig: NSObject {
             let move = CAKeyframeAnimation(keyPath: "position")
             let outward: CGFloat = xs[index] > 0.5 ? 1 : -1
             move.values = [NSValue(point: CGPoint(x: startX, y: startY)),
-                           NSValue(point: CGPoint(x: startX + outward * size * 0.12, y: startY - size * 0.38)),
-                           NSValue(point: CGPoint(x: startX + outward * size * 0.04, y: startY - size * 0.75))]
+                           NSValue(point: CGPoint(x: startX + outward * size * 0.04, y: startY - size * 0.22)),
+                           NSValue(point: CGPoint(x: startX + outward * size * 0.01, y: startY - size * 0.44))]
             move.keyTimes = [0, 0.5, 1]
             move.beginTime = beginTime + delay
             move.duration = life

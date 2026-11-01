@@ -55,7 +55,7 @@ enum PreferencesFeatureTests {
             && !SettingsBackupSupport.keysToClear(whenImporting: [:])
                 .contains(DefaultsKey.notchLiquidGlassEnabled),
                "old backups with island settings can migrate their glass choice, while older backups keep the local choice")
-        let glassDomain = "vorss.tests.glass-migration.\(UUID().uuidString)"
+        let glassDomain = "com.nyx.tests.glass-migration.\(UUID().uuidString)"
         let glassDefaults = UserDefaults(suiteName: glassDomain)!
         defer { glassDefaults.removePersistentDomain(forName: glassDomain) }
         Defaults.migrateLiquidGlassIsland(in: glassDefaults, domainName: glassDomain)
@@ -79,7 +79,7 @@ enum PreferencesFeatureTests {
         Defaults.migrateLiquidGlassIsland(in: glassDefaults, domainName: glassDomain)
         suite.expect(!glassDefaults.bool(forKey: DefaultsKey.notchLiquidGlassEnabled),
                "an explicit island choice survives later launches")
-        let companionDomain = "vorss.tests.companion-beta.\(UUID().uuidString)"
+        let companionDomain = "com.nyx.tests.companion-beta.\(UUID().uuidString)"
         let companionDefaults = UserDefaults(suiteName: companionDomain)!
         defer { companionDefaults.removePersistentDomain(forName: companionDomain) }
         // Setup writes every feature's availability, the companion's as off.

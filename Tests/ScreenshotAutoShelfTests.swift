@@ -300,7 +300,7 @@ enum ScreenshotAutoShelfTests {
         }
 
         let savedFolder = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorss-auto-shelf-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("nyx-auto-shelf-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: savedFolder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: savedFolder) }
         let savedURL = savedFolder.appendingPathComponent("Bug-7.png")

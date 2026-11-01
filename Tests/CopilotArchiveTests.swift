@@ -3,7 +3,7 @@ import Foundation
 /// Compare resumed production reads with a full replay at every event boundary.
 enum CopilotArchiveTests {
     static func run(_ suite: TestSuite) {
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-copilot-archive-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-copilot-archive-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }
         do { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
         catch { suite.expect(false, "the Copilot archive fixture creates its folder: \(error)"); return }

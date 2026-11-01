@@ -16,6 +16,9 @@ struct NotchNotice: Equatable {
     /// With the companion on, it takes the symbol's place in the notice and
     /// plays this, so the notice itself is its reaction.
     var mascot: NotchMascotReaction? = nil
+    /// A ringing alarm stays on the island until it is stopped, with a Stop
+    /// button, whatever the timer's own notice is set to do.
+    var persistent = false
     /// A banner that replaces one still on screen keeps at least its wings,
     /// so a burst of messages does not resize the island with each one.
     var minimumWings = NotchNoticeWings.zero
@@ -52,7 +55,9 @@ struct NotchNotice: Equatable {
         // An empty title leaves the mark alone, without the space after it.
         let mark = fitted(leading > 0 ? leading + 18 + 8 : 18)
         guard level == nil else { return NotchNoticeWings(leading: mark, trailing: mark) }
-        return NotchNoticeWings(leading: mark, trailing: fitted((detail as NSString).size(withAttributes: [.font: font]).width))
+        // A button's side holds its label and the padding around it.
+        let trailing = (detail as NSString).size(withAttributes: [.font: font]).width + (persistent ? 24 : 0)
+        return NotchNoticeWings(leading: mark, trailing: fitted(trailing))
     }
 
     /// The wider side, for what still takes one width for both.
@@ -1140,6 +1145,8 @@ final class NotchService: ObservableObject {
         // A watch keeps reading while the island is away, as on the lock
         // screen, and says so with a notification if it cannot show itself.
         NotchWatchService.shared.syncWithPreferences()
+        // Alarms ring whether or not the island is open, even with the lid closed.
+        NotchAlarmService.shared.syncWithPreferences()
         // Requested file work can continue while locked, but disabling its
         // feature must still cancel it before presentation resumes.
         NotchFileToolsService.shared.syncWithPreferences()
@@ -1726,7 +1733,7 @@ final class NotchService: ObservableObject {
 
     private func syncNoticeWithPreferences() {
         guard let notice else { return }
-        if !NotchSupport.routes(notice.event) || (notice.notificationID != nil && hiddenUntilHover) {
+        if (!notice.persistent && !NotchSupport.routes(notice.event)) || (notice.notificationID != nil && hiddenUntilHover) {
             dismissNotice()
         }
     }
@@ -2297,7 +2304,9 @@ final class NotchService: ObservableObject {
 
     @discardableResult
     func show(_ incoming: NotchNotice) -> Bool {
-        guard showsSystemFeedback, NotchSupport.routes(incoming.event),
+        // Nothing else takes the place of a ringing alarm.
+        guard notice?.persistent != true || incoming.persistent else { return false }
+        guard showsSystemFeedback, incoming.persistent || NotchSupport.routes(incoming.event),
               NotchSupport.shouldReplace(notice?.event, with: incoming.event, held: noticeExpanded) else { return false }
         noticeWork?.cancel(); noticeWork = nil
         var incoming = incoming
@@ -2324,7 +2333,7 @@ final class NotchService: ObservableObject {
             hoverWork?.cancel(); hoverWork = nil
             inside = true
             holdNotification(id)
-        } else {
+        } else if !incoming.persistent {
             scheduleNoticeDismissal(after: incoming.event.duration)
         }
         return true
@@ -2332,6 +2341,11 @@ final class NotchService: ObservableObject {
 
     func activateNotice(_ selectedNotice: NotchNotice) {
         guard notice == selectedNotice else { return }
+        // A click anywhere on a ringing alarm's notice is its Stop button.
+        if selectedNotice.persistent {
+            NotchAlarmService.shared.dismiss()
+            return
+        }
         if let id = selectedNotice.notificationID {
             guard NotchNotificationService.shared.openingID == nil else { return }
             // The pointer stays where the banner was; like a click on the
@@ -2449,6 +2463,14 @@ final class NotchService: ObservableObject {
     private func settleNotificationHover() {
         hoverWork?.cancel(); hoverWork = nil
         hoverState.close(pointerInside: windowHost?.containsHover(NSEvent.mouseLocation) == true)
+    }
+
+    /// Whether a ringing alarm's notice is on the island now.
+    var showsAlarmNotice: Bool { notice?.persistent == true }
+
+    func dismissAlarmNotice() {
+        guard notice?.persistent == true else { return }
+        dismissNotice()
     }
 
     private func dismissNotice() {

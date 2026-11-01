@@ -109,7 +109,7 @@ enum AppManagementFeatureTests {
 
         // MARK: WhatsApp downloads
 
-        let whatsAppEnabledSuite = "vorss.tests.whatsapp.enabled"
+        let whatsAppEnabledSuite = "com.nyx.tests.whatsapp.enabled"
         if let migrationDefaults = UserDefaults(suiteName: whatsAppEnabledSuite) {
             migrationDefaults.removePersistentDomain(forName: whatsAppEnabledSuite)
             Defaults.migrateWhatsAppDownloadsEnabled(in: migrationDefaults)
@@ -1120,7 +1120,7 @@ enum AppManagementFeatureTests {
                && CleanerSupport.isProtectedBundleID("243LU875E5.groups.com.apple.podcasts")
                && CleanerSupport.isProtectedBundleID("developer.apple.wwdc")
                && CleanerSupport.isProtectedBundleID("is.workflow.my.app")
-               && CleanerSupport.isProtectedBundleID("vorss.tests.switcher.shortcut"),
+               && CleanerSupport.isProtectedBundleID("com.nyx.tests.switcher.shortcut"),
                "system domains stay protected in every wrapping, team prefixes included")
         suite.expect(CleanerSupport.sharedInfrastructurePrefixes.allSatisfy {
                    CleanerSupport.isProtectedBundleID($0)

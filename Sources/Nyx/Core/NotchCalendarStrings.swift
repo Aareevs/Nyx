@@ -40,6 +40,16 @@ struct NotchCalendarStrings {
     let weekNumber: String
     /// Heads the per-calendar checkboxes in Settings.
     let calendars: String
+    /// The island's form for adding an event to Calendar.
+    let newEvent: String
+    let eventTitle: String
+    let starts: String
+    let ends: String
+    let saveEvent: String
+    let cancel: String
+    let back: String
+    let saveFailed: String
+    let noWritableCalendar: String
 }
 
 extension FeatureStrings {
@@ -77,7 +87,16 @@ extension FeatureStrings {
             timeLeftHint: "Show a timed event in progress in the closed island during the hour before it ends. Its title may appear in screen captures.",
             weekNumbers: "Week numbers",
             weekNumber: "Week %d",
-            calendars: "Calendars shown")
+            calendars: "Calendars shown",
+            newEvent: "New event",
+            eventTitle: "Title",
+            starts: "Starts",
+            ends: "Ends",
+            saveEvent: "Add to Calendar",
+            cancel: "Cancel",
+            back: "Back to Calendar",
+            saveFailed: "Could not save the event. Please try again.",
+            noWritableCalendar: "No calendar on this Mac accepts new events.")
         }
     }
 }

@@ -24,10 +24,13 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchAgentsEnabled) private var agentsEnabled = false
     @AppStorage(DefaultsKey.notchWatchEnabled) private var watchEnabled = true
     @AppStorage(DefaultsKey.notchCalculatorEnabled) private var calculatorEnabled = true
+    @AppStorage(DefaultsKey.notchAlarmsEnabled) private var alarmsEnabled = true
+    @AppStorage(DefaultsKey.notchAlarmsSound) private var alarmsSound = true
     @AppStorage(DefaultsKey.notchLyricsEnabled) private var lyricsEnabled = true
     @AppStorage(DefaultsKey.notchLyricsOnline) private var lyricsOnline = false
     @AppStorage(DefaultsKey.notchBrowserCovers) private var browserCovers = false
     @AppStorage(DefaultsKey.notchQueueEnabled) private var queueEnabled = true
+    @AppStorage(DefaultsKey.notchQueueOnline) private var queueOnline = false
     @AppStorage(DefaultsKey.notchLiveEqualizer) private var liveEqualizer = false
     @AppStorage(DefaultsKey.notchEnabled) private var enabled = false
     @AppStorage(DefaultsKey.notchMascotEnabled) private var mascotEnabled = false
@@ -117,7 +120,7 @@ struct NotchSettings: View {
         [String(enabled), String(calendarEnabled), String(calendarCountdown), String(calendarCountdownLead),
          String(calendarTimeLeft),
          String(notificationsEnabled), String(dismissNativeNotifications), String(gesturesEnabled),
-         String(lyricsEnabled), String(lyricsOnline), String(queueEnabled), String(liveEqualizer),
+         String(lyricsEnabled), String(lyricsOnline), String(queueEnabled), String(queueOnline), String(liveEqualizer),
          String(showPlayingMusic), String(includeOtherPlayers), String(musicShowVolume), idle, hiddenControls, controlOrder, size,
          String(timerEnabled), String(timerSoundEnabled), String(hideTimerCountdown),
          String(cameraEnabled), String(accessoriesEnabled), String(outlineEnabled), String(hideMenuBarGap),
@@ -452,6 +455,10 @@ struct NotchSettings: View {
             switchRow("photo", music.browserCovers, caption: music.browserCoversHint, isOn: $browserCovers)
             SettingsFeatureSwitchRow(symbol: "list.bullet", title: music.enableQueue, caption: music.queueDescription,
                                      isOn: $queueEnabled, feature: .notchQueue)
+            if queueEnabled, AppFeature.notchQueue.isAvailable {
+                switchRow("globe", music.onlineQueue, caption: music.onlineQueueHint, isOn: $queueOnline)
+                    .padding(.leading, settingsRowTextInset)
+            }
             SettingsFeatureSwitchRow(symbol: "waveform", title: music.liveEqualizer,
                                      caption: NotchAudioLevelSupport.isSupported ? music.liveEqualizerHint : music.liveEqualizerUnavailable,
                                      isOn: $liveEqualizer, feature: .notchLiveEqualizer, enabled: NotchAudioLevelSupport.isSupported)
@@ -543,6 +550,10 @@ struct NotchSettings: View {
         case .watch:
             NotchWatchSettingsControls()
                 .toggleStyle(TrailingSwitchToggleStyle())
+        case .alarms:
+            switchRow("speaker.wave.2", FeatureStrings.notchAlarms(l10n.language).sound, isOn: $alarmsSound)
+                .disabled(!AppFeature.notchAlarms.isAvailable)
+            Text(FeatureStrings.notchAlarms(l10n.language).soundHint).font(.caption).foregroundStyle(.secondary)
         case .mixer, .system, .tools, .calculator:
             EmptyView()
         }
@@ -884,6 +895,7 @@ struct NotchSettings: View {
         case .agents: return .notchAgents
         case .watch: return .notchWatch
         case .calculator: return .notchCalculator
+        case .alarms: return .notchAlarms
         }
     }
 
@@ -1058,6 +1070,7 @@ struct NotchSettings: View {
                 && (module != .calendar || calendarEnabled) && (module != .notifications || notificationsEnabled)
                 && (module != .agents || agentsEnabled) && (module != .watch || watchEnabled)
                 && (module != .calculator || calculatorEnabled)
+                && (module != .alarms || alarmsEnabled)
                 && !hidden.split(separator: ",").contains(Substring(module.rawValue))
         } set: { shown in
             if module == .timer { timerEnabled = shown }
@@ -1067,6 +1080,7 @@ struct NotchSettings: View {
             if module == .agents { agentsEnabled = shown }
             if module == .watch { watchEnabled = shown }
             if module == .calculator { calculatorEnabled = shown }
+            if module == .alarms { alarmsEnabled = shown }
             var values = Set(hidden.split(separator: ",").map(String.init))
             if shown { values.remove(module.rawValue) } else { values.insert(module.rawValue) }
             hidden = values.sorted().joined(separator: ",")

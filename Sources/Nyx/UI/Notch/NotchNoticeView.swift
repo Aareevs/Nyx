@@ -127,6 +127,14 @@ struct NotchNoticeView: View {
             NotchMeter(value: level, height: 5, tint: tint)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: level)
                 .transaction { $0.disablesAnimations = false }
+        } else if notice.persistent {
+            // The whole notice is the button; this says so.
+            Text(notice.detail)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 10).frame(height: 20)
+                .background(.orange, in: Capsule())
+                .frame(maxWidth: .infinity, alignment: .trailing)
         } else {
             Text(notice.detail)
                 .font(.system(size: 11, weight: .medium))

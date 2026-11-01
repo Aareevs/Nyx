@@ -38,6 +38,37 @@ private actor NotchCalendarReader {
         }
     }
 
+    /// Calendars that accept new events, with the one Calendar itself would
+    /// pick first, so the form opens on the same calendar the user expects.
+    func writableCalendars() -> (choices: [NotchCalendarChoice], preferred: String?) {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return ([], nil) }
+        let writable = store.calendars(for: .event).filter(\.allowsContentModifications)
+        let choices = writable.map {
+            NotchCalendarChoice(id: $0.calendarIdentifier, title: $0.title,
+                                sourceID: $0.source?.sourceIdentifier ?? "", source: $0.source?.title ?? "",
+                                color: Self.tint($0))
+        }
+        let preferred = store.defaultCalendarForNewEvents.flatMap { writable.contains($0) ? $0.calendarIdentifier : nil }
+        return (choices, preferred ?? choices.first?.id)
+    }
+
+    func add(title: String, start: Date, end: Date, allDay: Bool, calendar identifier: String) -> Bool {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess,
+              let calendar = store.calendar(withIdentifier: identifier), calendar.allowsContentModifications else { return false }
+        let event = EKEvent(eventStore: store)
+        event.calendar = calendar
+        event.title = title
+        event.isAllDay = allDay
+        event.startDate = start
+        event.endDate = end
+        do {
+            try store.save(event, span: .thisEvent, commit: true)
+            return true
+        } catch {
+            return false
+        }
+    }
+
     private static func tint(_ calendar: EKCalendar) -> NotchCalendarColor {
         let color = calendar.cgColor.flatMap { NSColor(cgColor: $0)?.usingColorSpace(.sRGB) }
         return color.map { NotchCalendarColor(red: $0.redComponent, green: $0.greenComponent,
@@ -75,6 +106,18 @@ final class NotchCalendarService: NSObject, ObservableObject {
     /// the island's reader is stopped, since the list is edited from Settings.
     func calendarChoices() async -> [NotchCalendarChoice] {
         await (reader ?? NotchCalendarReader()).calendars()
+    }
+
+    func writableCalendars() async -> (choices: [NotchCalendarChoice], preferred: String?) {
+        await (reader ?? NotchCalendarReader()).writableCalendars()
+    }
+
+    /// Saves the event to Calendar, which tells the island to read it again.
+    func addEvent(title: String, start: Date, end: Date, allDay: Bool, calendar: String) async -> Bool {
+        let saved = await (reader ?? NotchCalendarReader()).add(title: title, start: start, end: end,
+                                                                 allDay: allDay, calendar: calendar)
+        if saved { refresh() }
+        return saved
     }
 
     func isChosen(_ event: NotchCalendarEvent) -> Bool {

@@ -40,7 +40,7 @@ enum MixerFeatureTests {
                     "a saved gain moves to the slider position that plays it")
         suite.expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.appVolumesArePositions),
                "the saved volumes' format travels with them in a backup")
-        let curveSuite = "vorss.tests.mixer.volumecurve"
+        let curveSuite = "com.nyx.tests.mixer.volumecurve"
         if let curveDefaults = UserDefaults(suiteName: curveSuite) {
             curveDefaults.removePersistentDomain(forName: curveSuite)
             curveDefaults.set(["com.example.quiet": 0.25, "com.example.boosted": 1.5, "com.example.muted": 0.0],
@@ -143,7 +143,7 @@ enum MixerFeatureTests {
                "silence becomes a saved choice only after the one-time migration, and both travel in a backup")
         suite.expect(!SettingsBackupSupport.valueLooksRight(DefaultsKey.mixerHeadphonesDisconnectSilenceAllowed, "true"),
                "an imported silence marker must be a boolean")
-        let headphonesSuite = "vorss.tests.mixer.headphones"
+        let headphonesSuite = "com.nyx.tests.mixer.headphones"
         if let silentHeadphoneVolume = UserDefaults(suiteName: headphonesSuite) {
             let volumeKey = DefaultsKey.mixerHeadphonesDisconnectVolumePercent
             let markerKey = DefaultsKey.mixerHeadphonesDisconnectSilenceAllowed

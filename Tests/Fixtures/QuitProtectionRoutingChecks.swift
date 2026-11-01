@@ -3,8 +3,8 @@ extension QuitProtectionRoutingContract.QuitProtectionService {
     static func routingChecks(_ suite: TestSuite) {
         typealias Contract = QuitProtectionRoutingContract
         let defaults = Contract.UserDefaults.standard
-        defaults.removePersistentDomain(forName: "vorss.tests.quit-routing")
-        defer { defaults.removePersistentDomain(forName: "vorss.tests.quit-routing") }
+        defaults.removePersistentDomain(forName: "com.nyx.tests.quit-routing")
+        defer { defaults.removePersistentDomain(forName: "com.nyx.tests.quit-routing") }
         defaults.set(true, forKey: DefaultsKey.quitProtectionQuitEnabled)
         defaults.set("selectedOnly", forKey: DefaultsKey.quitProtectionQuitScope)
         defaults.set(["com.google.Chrome"], forKey: DefaultsKey.quitProtectionQuitExceptions)

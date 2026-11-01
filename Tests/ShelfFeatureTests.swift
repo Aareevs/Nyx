@@ -223,7 +223,7 @@ enum ShelfFeatureTests {
 
         do {
             let fm = FileManager.default
-            let root = fm.temporaryDirectory.appendingPathComponent("vorss-generated-tests-\(UUID())")
+            let root = fm.temporaryDirectory.appendingPathComponent("nyx-generated-tests-\(UUID())")
             defer { try? fm.removeItem(at: root) }
             let store = root.appendingPathComponent("store")
             let data = Data("edited capture".utf8)

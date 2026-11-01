@@ -722,7 +722,7 @@ enum NotchAgentTests {
                      "a router's prefixes are dropped and a dotted version reads like a dashed one")
 
         // 7. SQLite reader with temporary database
-        let tmpDir = FileManager.default.temporaryDirectory.appending(path: "vorss-opencode-\(UUID().uuidString)")
+        let tmpDir = FileManager.default.temporaryDirectory.appending(path: "nyx-opencode-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tmpDir) }
         let dbPath = tmpDir.appending(path: "opencode.db").path
@@ -866,7 +866,7 @@ enum NotchAgentTests {
                      "final cost adjustment with identical tokens preserves reported cost")
 
         // 10. WAL modification discovery
-        let walDir = FileManager.default.temporaryDirectory.appending(path: "vorss-wal-\(UUID().uuidString)")
+        let walDir = FileManager.default.temporaryDirectory.appending(path: "nyx-wal-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: walDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: walDir) }
         let root = AgentLogRoot.canonical(walDir)
@@ -1003,7 +1003,7 @@ enum NotchAgentTests {
     }
 
     private static func openCodeMillisecondDedup(_ suite: TestSuite) {
-        let dir = FileManager.default.temporaryDirectory.appending(path: "vorss-boundary-\(UUID().uuidString)")
+        let dir = FileManager.default.temporaryDirectory.appending(path: "nyx-boundary-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let dbPath = dir.appending(path: "opencode.db").path
@@ -1262,7 +1262,7 @@ enum NotchAgentTests {
     }
 
     private static func openCodeSubagents(_ suite: TestSuite, now: Date) {
-        let dir = FileManager.default.temporaryDirectory.appending(path: "vorss-subagent-\(UUID().uuidString)")
+        let dir = FileManager.default.temporaryDirectory.appending(path: "nyx-subagent-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let dbPath = dir.appending(path: "opencode.db").path
@@ -1348,7 +1348,7 @@ enum NotchAgentTests {
     }
 
     private static func openCodeDatabaseReplacement(_ suite: TestSuite, now: Date) {
-        let dir = FileManager.default.temporaryDirectory.appending(path: "vorss-replace-\(UUID().uuidString)")
+        let dir = FileManager.default.temporaryDirectory.appending(path: "nyx-replace-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let activePath = dir.appending(path: "opencode.db").path
@@ -1416,7 +1416,7 @@ enum NotchAgentTests {
     /// A database laid out like OpenCode's, in a folder of its own. OpenCode
     /// 1.15 and later also keep a session_message table of their own.
     static func openCodeDatabase(_ sql: String) -> (folder: URL, path: String)? {
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-opencode-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-opencode-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let path = folder.appending(path: "opencode.db").path
         guard openCodeExec(path, """
@@ -1485,7 +1485,7 @@ enum NotchAgentTests {
         let model = #""model":{"id":"ox-alpha","providerID":"stealth","variant":"default"}"#
         for upgraded in [false, true] {
             let layout = upgraded ? "an upgraded database" : "a fresh install"
-            let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-opencode2-\(UUID().uuidString)")
+            let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-opencode2-\(UUID().uuidString)")
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: folder) }
             let path = folder.appending(path: "opencode.db").path
@@ -1605,7 +1605,7 @@ enum NotchAgentTests {
     /// OpenCode 2 copies an upgraded database's history session by session,
     /// so an old session picked up again sits before sessions long ended.
     private static func openCodeTwoHistory(_ suite: TestSuite) {
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-opencode2-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-opencode2-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let path = folder.appending(path: "opencode.db").path
@@ -1642,7 +1642,7 @@ enum NotchAgentTests {
     private static func openCodeTwoSlowStep(_ suite: TestSuite, now: Date) {
         func at(_ seconds: TimeInterval) -> Date { Date(timeIntervalSince1970: seconds) }
         let model = #""model":{"id":"ox-alpha","providerID":"stealth","variant":"default"}"#
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-opencode2-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-opencode2-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let path = folder.appending(path: "opencode.db").path
@@ -1697,7 +1697,7 @@ enum NotchAgentTests {
     private static func openCodeTwoCutStep(_ suite: TestSuite, now: Date) {
         func at(_ seconds: TimeInterval) -> Date { Date(timeIntervalSince1970: seconds) }
         let model = #""model":{"id":"ox-alpha","providerID":"stealth","variant":"default"}"#
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-opencode2-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-opencode2-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let path = folder.appending(path: "opencode.db").path
@@ -1841,7 +1841,7 @@ enum NotchAgentTests {
     }
 
     private static func openCodeDiscovery(_ suite: TestSuite) {
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-discover-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-discover-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }
         let root = AgentLogRoot(provider: .opencode, url: folder)
         let nested = folder.appending(path: "snapshot/project/opencode.db")
@@ -2574,7 +2574,7 @@ enum NotchAgentTests {
     /// A Claude session quit or killed mid-turn ends the turn by its process
     /// record, not after the quiet wait.
     private static func sessionProcesses(_ suite: TestSuite, start: Date) {
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-agent-sessions-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-agent-sessions-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         func write(_ name: String, _ text: String) {
@@ -2641,7 +2641,7 @@ enum NotchAgentTests {
     }
 
     private static func reading(_ suite: TestSuite) {
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-agent-logs-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-agent-logs-\(UUID().uuidString)")
         let file = folder.appending(path: "session.jsonl")
         defer { try? FileManager.default.removeItem(at: folder) }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -2675,7 +2675,7 @@ enum NotchAgentTests {
         suite.expect(found.map(\.path) == [root.appending(path: "session.jsonl").path] && found.first?.provider == .codex,
                      "log files are found under a root")
         let copilotRoot = FileManager.default.temporaryDirectory
-            .appending(path: "vorss-copilot-logs-\(UUID().uuidString)")
+            .appending(path: "nyx-copilot-logs-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: copilotRoot) }
         let copilotSession = copilotRoot.appending(path: "session-id")
         let copilotWorkspace = copilotSession.appending(path: "workspace/nested")
@@ -3028,7 +3028,7 @@ enum NotchAgentTests {
         suite.expect(first?.first?.used == ["fh": 5, "sd": 20] && AgentClaudeAppUsage.samples(from: history([], version: 3)) == nil
                         && AgentClaudeAppUsage.samples(from: Data("[]".utf8)) == nil,
                      "both versions of the file are read, and an unknown one is left alone")
-        let home = FileManager.default.temporaryDirectory.appending(path: "vorss-claude-app-\(UUID().uuidString)")
+        let home = FileManager.default.temporaryDirectory.appending(path: "nyx-claude-app-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: home) }
         let url = AgentClaudeAppUsage.historyURL(home: home)
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

@@ -127,10 +127,11 @@ struct KeepAwakeEndTimePicker: View {
 /// One scrollable two-digit column: the current value with its neighbours
 /// above and below. Scrolling, clicking a neighbour, or the arrow keys step
 /// it, wrapping at the ends.
-private struct TimeDigitWheel: View {
+struct TimeDigitWheel: View {
     let title: String
     let range: Int
     @Binding var value: Int
+    var tint: Color = .accentColor
     @State private var hovering = false
     @State private var monitor: Any?
     @State private var accumulated: CGFloat = 0
@@ -141,10 +142,10 @@ private struct TimeDigitWheel: View {
             Text(String(format: "%02d", value))
                 .font(.system(size: 26, weight: .medium))
                 .monospacedDigit()
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(tint)
                 .frame(width: 52, height: 36)
                 .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.accentColor.opacity(hovering ? 0.2 : 0.13)))
+                    .fill(tint.opacity(hovering ? 0.2 : 0.13)))
             neighbour(1)
         }
         .contentShape(Rectangle())

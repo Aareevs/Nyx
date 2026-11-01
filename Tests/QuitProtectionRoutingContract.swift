@@ -4,7 +4,7 @@ import AppKit
 /// HUD and fake applications. No event tap is installed and no app is quit.
 enum QuitProtectionRoutingContract {
     enum UserDefaults {
-        static let standard = Foundation.UserDefaults(suiteName: "vorss.tests.quit-routing")!
+        static let standard = Foundation.UserDefaults(suiteName: "com.nyx.tests.quit-routing")!
     }
     enum AppFeature {
         case quitWindowProtection

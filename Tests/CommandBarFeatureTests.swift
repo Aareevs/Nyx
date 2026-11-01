@@ -640,7 +640,7 @@ enum CommandBarFeatureTests {
             // Scripts that note each run in a file of their own, for the
             // production runner to run the way the bar does (issue #3094).
             let folder = FileManager.default.temporaryDirectory
-                .appending(path: "vorss-script-runs-\(UUID().uuidString)")
+                .appending(path: "nyx-script-runs-\(UUID().uuidString)")
             defer { try? FileManager.default.removeItem(at: folder) }
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             // A slow one waits before it prints, so a run started after it

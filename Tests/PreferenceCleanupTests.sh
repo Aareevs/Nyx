@@ -14,12 +14,12 @@ sleep() {
         remaining_writes=$((remaining_writes - 1))
     fi
 }
-print '{}' > "$cleanup_test_dir/vorss.tests.first.plist"
+print '{}' > "$cleanup_test_dir/com.nyx.tests.first.plist"
 print '{}' > "$cleanup_test_dir/metrics-tests.plist"
 print 'preserve' > "$cleanup_test_dir/unrelated.plist"
 discard_test_preferences "$cleanup_test_dir"
 [[ ! -e "$cleanup_test_dir/com.nyx.tests.delayed.plist" ]]
-[[ ! -e "$cleanup_test_dir/vorss.tests.first.plist" ]]
+[[ ! -e "$cleanup_test_dir/com.nyx.tests.first.plist" ]]
 [[ ! -e "$cleanup_test_dir/metrics-tests.plist" ]]
 [[ "$(cat "$cleanup_test_dir/unrelated.plist")" == preserve ]]
 

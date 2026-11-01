@@ -187,7 +187,7 @@ enum SwitcherModelFeatureTests {
         suite.expect(registeredDefaults[DefaultsKey.switcherWindowShortcut] as? String
                == GlobalShortcut.switcherWindowDefault.storageValue,
                "switcher window shortcut defaults to Cmd+Grave")
-        let shortcutSuite = "vorss.tests.switcher.shortcut"
+        let shortcutSuite = "com.nyx.tests.switcher.shortcut"
         if let migrationDefaults = UserDefaults(suiteName: shortcutSuite) {
             migrationDefaults.removePersistentDomain(forName: shortcutSuite)
             migrationDefaults.set("control+option+command:50", forKey: DefaultsKey.switcherWindowShortcut)

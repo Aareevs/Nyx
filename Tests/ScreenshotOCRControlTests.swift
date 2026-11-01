@@ -53,7 +53,7 @@ enum ScreenshotOCRControlTests {
         let previous = NSApp.perform(getter, with: attribute)?.takeUnretainedValue() as? NSNumber ?? false
         NSApp.perform(setter, with: true, with: attribute)
         defer { NSApp.perform(setter, with: previous, with: attribute) }
-        let domain = "vorss.tests.ocr-control.\(UUID().uuidString)"
+        let domain = "com.nyx.tests.ocr-control.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: domain)!
         defer {
             defaults.removePersistentDomain(forName: domain)

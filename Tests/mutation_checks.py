@@ -1571,7 +1571,7 @@ def run(directory, arguments):
 
 
 def main():
-    with tempfile.TemporaryDirectory(prefix="vorss-mutation-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="nyx-mutation-") as temporary:
         directory = Path(temporary)
         # APFS clones keep the snapshot cheap and preserve timestamps so the
         # compiler can reuse unaffected objects after the baseline build.

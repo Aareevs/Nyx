@@ -165,7 +165,7 @@ enum ShelfDragCompletionTests {
 
     private static func fileDragProtection(_ suite: TestSuite) {
         let fm = FileManager.default
-        let root = fm.temporaryDirectory.appendingPathComponent("vorss-shelf-drag-tests-\(UUID())")
+        let root = fm.temporaryDirectory.appendingPathComponent("nyx-shelf-drag-tests-\(UUID())")
         defer { try? fm.removeItem(at: root) }
         do {
             let package = root.appendingPathComponent("Library.app", isDirectory: true)

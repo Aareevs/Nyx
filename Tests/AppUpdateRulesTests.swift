@@ -4,7 +4,7 @@ import Foundation
 /// counters in place of scanning, scheduling and notifications.
 enum AppUpdateRulesContract {
     enum UserDefaults {
-        static let name = "vorss.tests.app-update-rules.\(UUID().uuidString)"
+        static let name = "com.nyx.tests.app-update-rules.\(UUID().uuidString)"
         static let standard = Foundation.UserDefaults(suiteName: name)!
     }
 
@@ -108,7 +108,7 @@ enum AppUpdateRulesContract {
     /// the scan takes its own release from the product file beside its code.
     private static func productVersions(_ suite: TestSuite) {
         let folder = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorss-app-update-products-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("nyx-app-update-products-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         func scanned(_ name: String, product: String?) -> Support.InstalledApp? {
             let url = folder.appendingPathComponent("\(name).app", isDirectory: true)
@@ -135,7 +135,7 @@ enum AppUpdateRulesContract {
     /// date or never matched by a source can still be left out.
     private static func pickedExclusions(_ suite: TestSuite) {
         let folder = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorss-app-update-rules-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("nyx-app-update-rules-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         func bundle(_ name: String, _ info: [String: Any]) -> URL {
             let url = folder.appendingPathComponent("\(name).app", isDirectory: true)

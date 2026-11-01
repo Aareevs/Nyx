@@ -571,6 +571,7 @@ struct NotchView: View {
             case .agents: NotchAgentsView(size: pageSize)
             case .watch: NotchWatchView(size: pageSize)
             case .calculator: NotchCalculatorView(size: pageSize)
+            case .alarms: NotchAlarmsView(size: pageSize)
             }
         }
     }
@@ -802,6 +803,7 @@ extension NotchModule: PanelOrderItem {
         case .agents: return FeatureStrings.notchAgents(language).title
         case .watch: return FeatureStrings.notchWatch(language).title
         case .calculator: return FeatureStrings.notchCalculator(language).title
+        case .alarms: return FeatureStrings.notchAlarms(language).title
         }
     }
 }

@@ -139,6 +139,7 @@ struct MetricsTests {
                 MonitorTokenTests.run(suite)
             }),
             ("calculator", { CalculatorEngineTests.run(suite) }),
+            ("alarms", { NotchAlarmTests.run(suite) }),
             ("feature-hub-layout", { FeatureHubLayoutTests.run(suite) }),
             ("display-restoration", {
                 DisplayRestorationTests.run(suite)

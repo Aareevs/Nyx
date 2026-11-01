@@ -173,7 +173,7 @@ enum AgentUsageReadTests {
 
     static func run(_ suite: TestSuite) {
         runAntigravity(suite)
-        let folder = FileManager.default.temporaryDirectory.appending(path: "vorss-streaming-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appending(path: "nyx-streaming-\(UUID().uuidString)")
         defer {
             AgentLogReader.beforeLine = nil
             try? FileManager.default.removeItem(at: folder)
