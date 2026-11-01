@@ -15,6 +15,8 @@ struct GeneralSettings: View {
     @State private var loginPending = false
     @State private var loginRefreshID = UUID()
     @AppStorage(DefaultsKey.hotkeyEnabled) private var hotkeyEnabled = true
+    @AppStorage(DefaultsKey.updateCheckAuto) private var updateCheckAuto = false
+    @ObservedObject private var updater = NyxUpdateService.shared
 
     private var text: GeneralSettingsStrings { FeatureStrings.generalSettings(l10n.language) }
     private var appearanceStrings: AppearanceStrings { FeatureStrings.appearance(l10n.language) }
@@ -28,6 +30,7 @@ struct GeneralSettings: View {
                 if AppFeature.keepAwake.isAvailable {
                     shortcutCard
                 }
+                updatesCard
                 menuBarFolderCard
             }
             .frame(maxWidth: 760)
@@ -139,6 +142,39 @@ struct GeneralSettings: View {
                     .foregroundStyle(.orange)
                     .padding(.leading, settingsRowTextInset)
             }
+        }
+    }
+
+    private var updatesCard: some View {
+        SettingsCard(title: "Updates") {
+            SettingsRow(symbol: "arrow.down.circle", title: "Nyx \(AppInfo.version)",
+                        caption: updateCaption) {
+                HStack {
+                    if updater.state == .checking { ProgressView().controlSize(.small) }
+                    if case .available(_, let url) = updater.state {
+                        Button("Download") { NSWorkspace.shared.open(url) }
+                    }
+                    Button("Check for updates") { updater.check() }
+                        .disabled(updater.state == .checking)
+                }
+            }
+            Divider()
+            SettingsRow(symbol: "clock.arrow.circlepath", title: "Check automatically",
+                        caption: "Looks at the Nyx releases page on GitHub once a day when Nyx starts. Off by default, and it sends nothing about you.") {
+                Toggle("Check automatically", isOn: $updateCheckAuto)
+                    .labelsHidden()
+                    .toggleStyle(NyxSwitchToggleStyle())
+            }
+        }
+    }
+
+    private var updateCaption: String {
+        switch updater.state {
+        case .idle: return "Nyx does not update itself. Check here, then download the new .dmg and replace Nyx in Applications."
+        case .checking: return "Checking GitHub for a newer version..."
+        case .upToDate: return "You have the latest version."
+        case .available(let version, _): return "Nyx \(version) is available. Download the .dmg and drag Nyx into Applications."
+        case .failed: return "Could not reach GitHub. Check your connection and try again."
         }
     }
 

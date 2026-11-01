@@ -75,6 +75,8 @@ Selecting a Claude account changes only which existing Claude Code profile Nyx m
 
 9. **Spotify playlists, only after you connect Spotify in Settings, Connectors.** Nyx signs in with Spotify's own login page using PKCE, so no secret is stored, then asks `api.spotify.com` for your playlists and to play the song you pick. The login is kept in a private file only your account can read, and Disconnect deletes it. Nothing is sent to anyone but Spotify.
 
+10. **Nyx updates, only when you check or turn on the daily check.** Pressing Check for updates in General settings, or the optional automatic check that is off by default, asks `api.github.com` for the latest Nyx release. The request carries only the Nyx version in its user agent, and the answer is the release number and its page. Nothing is downloaded or installed; you choose whether to open the release page.
+
 That is the entire list. There are no hidden beacons or background uploads.
 
 ## Changes to this document

@@ -41,6 +41,8 @@ enum DefaultsKey {
     static let showCountdown = "showCountdownInMenuBar"
     static let statusItemPlacementGeneration = "statusItemPlacementGeneration"
     static let hasOnboarded = "hasOnboarded"
+    static let updateCheckAuto = "updateCheckAuto"         // look for a newer Nyx once a day at launch
+    static let updateLastCheck = "updateLastCheck"         // time of the last update check
     static let menuBarFolderEnabled = "menuBarFolderEnabled" // folder icon that hides other menu bar icons
     static let sleepDisabledFlag = "nyxDisabledSleep"   // internal guard for pmset disablesleep
     static let dimmedDisplaySavedBrightness = "nyxDimmedDisplaySavedBrightness" // internal guard for closed-lid screen dimming recovery
@@ -1415,6 +1417,7 @@ enum Defaults {
         DefaultsKey.notchLiveEqualizer: false,
         DefaultsKey.notchQueueEnabled: true,
         DefaultsKey.notchQueueOnline: false,
+        DefaultsKey.updateCheckAuto: false,
         DefaultsKey.notchDownloadsEnabled: true,
         DefaultsKey.notchWatchEnabled: true,
         DefaultsKey.notchCalculatorEnabled: true,

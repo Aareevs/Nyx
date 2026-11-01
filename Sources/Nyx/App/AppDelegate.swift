@@ -65,6 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             UNUserNotificationCenter.current().delegate = self
         }
         beginStartupWatch()
+        NyxUpdateService.shared.checkAtLaunchIfWanted()
         Self.boundAccessibilityWaits()
         // Pay the first AppKit process lookup before an input callback needs
         // it. Each click still resolves the current process independently.
