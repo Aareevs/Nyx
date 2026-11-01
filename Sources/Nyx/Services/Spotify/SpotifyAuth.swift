@@ -14,7 +14,7 @@ final class SpotifyAuth: ObservableObject {
     static let clientID = "96989a67bd41405fb9588a61e1ac9511"
     static let redirectPort: UInt16 = 8888
     static let redirectURI = "http://127.0.0.1:8888/callback"
-    private static let scopes = "playlist-read-private playlist-read-collaborative user-modify-playback-state user-read-playback-state"
+    private static let scopes = "playlist-read-private playlist-read-collaborative user-modify-playback-state user-read-playback-state user-read-currently-playing"
 
     enum State: Equatable { case disconnected, connecting, connected, failed(String) }
 
@@ -172,7 +172,7 @@ final class SpotifyAuth: ObservableObject {
     }
 }
 
-enum SpotifyError: Error { case notConnected, rejected, network, noDevice, premiumRequired }
+enum SpotifyError: Error { case notConnected, rejected, network, noDevice, premiumRequired, notAllowed }
 
 private extension Data {
     var base64URL: String {

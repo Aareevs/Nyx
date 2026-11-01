@@ -6,6 +6,17 @@ struct NotchQueueView: View {
     @ObservedObject private var l10n = L10n.shared
     private var text: NotchMusicExtrasStrings { FeatureStrings.notchMusicExtras(l10n.language) }
 
+    private var emptyMessage: String {
+        switch service.queueNote {
+        case .needsOnline: return text.queueNeedsOnline
+        case .needsSpotifyLogin: return text.queueNeedsSpotify
+        case .needsBrowserScripting: return text.queueNeedsScripting
+        case .noPlaylist: return text.queueNoPlaylist
+        case .unavailable: return text.queueWebFailed
+        case nil: return service.upcoming == nil ? text.queueUnavailable : text.queueEmpty
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -22,7 +33,8 @@ struct NotchQueueView: View {
             if let queue = service.upcoming, !service.upcomingRows.isEmpty {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(service.upcomingRows) { item in
+                        // Five at a time: as one plays, the sixth moves up to fifth.
+                        ForEach(Array(service.upcomingRows.prefix(5))) { item in
                             HStack(spacing: 10) {
                                 NotchArtwork(image: service.upcomingArtwork[item.id], size: 34)
                                 VStack(alignment: .leading, spacing: 3) {
@@ -44,8 +56,23 @@ struct NotchQueueView: View {
                 }
                 .notchScrollEdgeFade()
             } else if !service.queueLoading {
-                NotchEmptyView(symbol: "list.bullet", message: service.upcoming == nil ? text.queueUnavailable : text.queueEmpty) {
-                    NotchPillButton(title: text.openPlayer, prominent: true) { RadialNowPlayingApplication.open(playback.track) }
+                NotchEmptyView(symbol: "list.bullet", message: emptyMessage) {
+                    switch service.queueNote {
+                    case .needsOnline:
+                        NotchPillButton(title: text.queueTurnOn, prominent: true) {
+                            UserDefaults.standard.set(true, forKey: DefaultsKey.notchQueueOnline)
+                            service.refreshQueue()
+                        }
+                    case .needsBrowserScripting:
+                        NotchPillButton(title: text.retry, prominent: true) { service.refreshQueue() }
+                    case .needsSpotifyLogin:
+                        NotchPillButton(title: text.queueSignIn, prominent: true) {
+                            SpotifyAuth.shared.disconnect()
+                            SpotifyAuth.shared.connect()
+                        }
+                    default:
+                        NotchPillButton(title: text.openPlayer, prominent: true) { RadialNowPlayingApplication.open(playback.track) }
+                    }
                 }
             }
         }

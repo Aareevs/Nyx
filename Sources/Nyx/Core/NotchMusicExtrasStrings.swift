@@ -29,6 +29,15 @@ struct NotchMusicExtrasStrings {
     let enableQueue: String
     let queueUnavailable: String
     let queueEmpty: String
+    let queueNeedsOnline: String
+    let queueTurnOn: String
+    let queueNeedsSpotify: String
+    let queueSignIn: String
+    let queueNoPlaylist: String
+    let queueNeedsScripting: String
+    let queueWebFailed: String
+    let onlineQueue: String
+    let onlineQueueHint: String
     let playNow: String
     let refresh: String
     let openPlayer: String
@@ -82,6 +91,15 @@ extension FeatureStrings {
             enableQueue: "Show upcoming songs",
             queueUnavailable: "This player does not share its upcoming songs.",
             queueEmpty: "No upcoming songs",
+            queueNeedsOnline: "Spotify and YouTube share their upcoming songs only online. Turn on the lookup to see them.",
+            queueTurnOn: "Turn on",
+            queueNeedsSpotify: "You need a Spotify Premium account, and the developer has to add you first. Once they have, sign in to Spotify here.",
+            queueSignIn: "Sign in to Spotify",
+            queueNoPlaylist: "This video is not in a YouTube playlist, so there is no list of what comes next.",
+            queueNeedsScripting: "To list a YouTube playlist, turn on “Allow JavaScript from Apple Events” in your browser’s View ▸ Developer menu, then press Retry.",
+            queueWebFailed: "Could not load the upcoming songs. Try again in a moment.",
+            onlineQueue: "Look up Spotify and YouTube queues online",
+            onlineQueueHint: "Spotify’s queue comes from your Spotify account. For YouTube, Nyx reads the playing tab’s address from your browser and loads that playlist’s public page. Nothing is stored.",
             playNow: "Play now",
             refresh: "Refresh",
             openPlayer: "Open player",

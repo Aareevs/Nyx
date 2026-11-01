@@ -7,6 +7,7 @@ struct NotchSpotifyView: View {
     @ObservedObject private var library = SpotifyLibrary.shared
     @State private var open: SpotifyPlaylist?
     @State private var playingID: String?
+    @State private var arranging = false
 
     var body: some View {
         Group {
@@ -50,6 +51,10 @@ struct NotchSpotifyView: View {
                 }
                 if library.loading { ProgressView().controlSize(.mini) }
                 if open == nil {
+                    Button { arranging.toggle() } label: { Image(systemName: "arrow.up.arrow.down") }
+                        .buttonStyle(.borderless).foregroundStyle(arranging ? Color.green : .primary)
+                        .help(arranging ? "Done arranging" : "Arrange playlists")
+                        .accessibilityLabel(arranging ? "Done arranging" : "Arrange playlists")
                     Button { Task { await library.loadPlaylists(force: true) } } label: { Image(systemName: "arrow.clockwise") }
                         .buttonStyle(.borderless).disabled(library.loading).help("Refresh").accessibilityLabel("Refresh")
                     Button { auth.disconnect() } label: { Image(systemName: "rectangle.portrait.and.arrow.right") }
@@ -68,10 +73,14 @@ struct NotchSpotifyView: View {
                     }
                 })
             } else {
-                list(rows: library.playlists.map { playlist in
+                let playlists = library.orderedPlaylists
+                list(rows: playlists.enumerated().map { index, playlist in
                     Row(id: playlist.id, title: playlist.name,
                         subtitle: playlist.trackCount > 0 ? "\(playlist.trackCount) songs" : playlist.owner,
-                        image: playlist.imageURL, active: false) {
+                        image: playlist.imageURL, active: false,
+                        move: arranging ? { library.move(playlist, by: $0) } : nil,
+                        canMoveUp: index > 0, canMoveDown: index < playlists.count - 1) {
+                        guard !arranging else { return }
                         self.open = playlist
                         Task { await library.loadTracks(of: playlist) }
                     }
@@ -87,13 +96,28 @@ struct NotchSpotifyView: View {
         let subtitle: String
         let image: URL?
         let active: Bool
+        /// Set while arranging: moves the row up (-1) or down (1).
+        var move: ((Int) -> Void)? = nil
+        var canMoveUp = false
+        var canMoveDown = false
         let action: () -> Void
+    }
+
+    private func arrow(_ symbol: String, _ label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                .frame(width: 26, height: 26).contentShape(Circle())
+        }
+        .buttonStyle(NotchButtonStyle(cornerRadius: 13))
+        .disabled(!enabled).opacity(enabled ? 1 : 0.3)
+        .help(label).accessibilityLabel(label)
     }
 
     private func list(rows: [Row]) -> some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(rows) { row in
+                    HStack(spacing: 6) {
                     Button(action: row.action) {
                         HStack(spacing: 10) {
                             AsyncImage(url: row.image) { image in
@@ -116,6 +140,11 @@ struct NotchSpotifyView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    if let move = row.move {
+                        arrow("chevron.up", "Move up", enabled: row.canMoveUp) { move(-1) }
+                        arrow("chevron.down", "Move down", enabled: row.canMoveDown) { move(1) }
+                    }
+                    }
                 }
             }
         }

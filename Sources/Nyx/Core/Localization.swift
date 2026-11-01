@@ -716,6 +716,7 @@ struct Strings {
     let obStepDoneTitle: String
     let obStepDoneBody: String
     let obDoneHint: String
+    let obQueueTip: String
     let obLanguageUpdateTitle: String
     let obLanguageUpdateBody: String
     let obPurposeTitle: String
@@ -1691,6 +1692,7 @@ extension Strings {
         obStepDoneTitle: "All set!",
         obStepDoneBody: "Nyx is already looking after your Mac.",
         obDoneHint: "Look for the black hole in the menu bar, at the top right of the screen.",
+        obQueueTip: "Optional: to see what plays next from YouTube, turn on “Allow JavaScript from Apple Events” in your browser’s View ▸ Developer menu, and switch on the queue lookup in Settings ▸ Dynamic Island ▸ Music. For Spotify, just sign in from the Up next page.",
         obLanguageUpdateTitle: "Now in your language",
         obLanguageUpdateBody: "Nyx now speaks several languages. Choose the one you’d like to use; you can change it anytime in Settings.",
         obPurposeTitle: "What brought you here?",

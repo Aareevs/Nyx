@@ -30,6 +30,12 @@ final class NotchMusicService: ObservableObject {
     @Published private(set) var queueLoading = false
     @Published private(set) var queueActionPending = false
     @Published private(set) var queueActionFailed = false
+    /// Why the web queue of Spotify or a YouTube tab is empty, when it is.
+    @Published private(set) var queueNote: NotchWebQueue.Failure?
+    /// The list comes from the web, not the player's own adapter.
+    private var queueIsWeb = false
+    /// Where the shown web queue came from, and the title it was read under.
+    private var webSource: (source: NotchWebQueue.Source, title: String)?
     /// A player moved on to another song; see NotchTrackChange. Sent before
     /// the song is published, while every surface still shows the old one.
     let trackChanges = PassthroughSubject<Void, Never>()
@@ -278,6 +284,7 @@ final class NotchMusicService: ObservableObject {
             trackEnds.send()
         }
         updateArtwork(reading.artwork, tint: reading.tint, playback: reading.playback)
+        let previousTitle = playback?.track.title
         playback = reading.playback
         sources = reading.sources
         NotchPreferredPlayer.remember(reading.playback, in: reading.sources)
@@ -287,6 +294,10 @@ final class NotchMusicService: ObservableObject {
         updateAutomation(for: reading.playback)
         NotchLyricsService.shared.playbackChanged(reading.playback)
         updateQueue()
+        // Another song has another list of what follows it.
+        if queueIsWeb, queueVisible, reading.playback != nil, reading.playback?.track.title != previousTitle {
+            refreshQueue()
+        }
     }
 
     private func connectionEnded() {
@@ -454,9 +465,11 @@ final class NotchMusicService: ObservableObject {
         queueVisible = visible && NotchQueueSupport.isEnabled() && playback != nil
         guard queueVisible else {
             commandWriter.setQueueRequest(nil)
-            if queueRequest != nil { send(.queueStop) }
+            if queueRequest != nil, !queueIsWeb { send(.queueStop) }
             queueRequest = nil
             queueReply = nil
+            queueIsWeb = false
+            queueNote = nil
             upcoming = nil
             queueLoading = false
             queueActionPending = false
@@ -477,17 +490,25 @@ final class NotchMusicService: ObservableObject {
         guard queueVisible, NotchQueueSupport.isEnabled(), playback != nil else { return }
         let request = UUID()
         queueRequest = request
-        commandWriter.setQueueRequest(request)
         queueReply = nil
         upcoming = nil
+        queueNote = nil
         queueLoading = true
         queueActionFailed = false
         queueActionPending = false
+        if let playback, let source = NotchWebQueue.source(forBundle: playback.track.appBundleIdentifier) {
+            queueIsWeb = true
+            commandWriter.setQueueRequest(nil)
+            loadWebQueue(source, request: request, playback: playback)
+            return
+        }
+        queueIsWeb = false
+        commandWriter.setQueueRequest(request)
         if !send(.queue(request)) { queueLoading = false; queueActionFailed = true }
     }
 
     var upcomingIsHeld: Bool {
-        guard let upcoming else { return false }
+        guard let upcoming, !queueIsWeb else { return false }
         return upcoming.currentIdentifier != playback?.itemIdentifier || upcoming.pid != playback?.track.appPID
     }
 
@@ -496,6 +517,7 @@ final class NotchMusicService: ObservableObject {
     }
 
     func playQueued(_ item: NotchQueueItem) {
+        if queueIsWeb { playWebQueued(item); return }
         guard queueVisible, NotchQueueSupport.isEnabled(), let request = queueRequest, let upcoming,
               let playback, upcoming.currentIdentifier == playback.itemIdentifier,
               upcoming.pid == playback.track.appPID, upcoming.canPlay,
@@ -520,7 +542,49 @@ final class NotchMusicService: ObservableObject {
         }
     }
 
+    func playWebQueued(_ item: NotchQueueItem) {
+        guard queueVisible, let upcoming, upcoming.canPlay, !queueActionPending, let web = webSource else { return }
+        queueActionFailed = false
+        queueActionPending = true
+        let request = queueRequest
+        Task { @MainActor [weak self] in
+            let played: Bool
+            switch web.source {
+            case .spotify: played = await NotchWebQueue.playSpotify(offset: item.offset)
+            case let .browser(name, usesName):
+                played = await NotchWebQueue.playYouTube(app: name, usesName: usesName, title: web.title, itemID: item.id)
+            }
+            guard let self, self.queueRequest == request else { return }
+            self.queueActionPending = false
+            self.queueActionFailed = !played
+            // The player moves on a moment later; its list follows.
+            if played {
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                if self.queueRequest == request, self.queueVisible { self.refreshQueue() }
+            }
+        }
+    }
+
+    private func loadWebQueue(_ source: NotchWebQueue.Source, request: UUID, playback: NotchPlayback) {
+        Task { @MainActor [weak self] in
+            let result = await NotchWebQueue.fetch(source, playback: playback)
+            guard let self, self.queueRequest == request, self.queueIsWeb else { return }
+            self.queueLoading = false
+            switch result {
+            case let .success(loaded):
+                self.queueNote = nil
+                self.webSource = (source, playback.track.title ?? "")
+                self.upcoming = NotchQueueSnapshot(requestID: request, currentIdentifier: playback.itemIdentifier ?? "",
+                                                   pid: playback.track.appPID ?? 0, items: loaded.items, canPlay: loaded.canPlay)
+            case let .failure(reason):
+                self.queueNote = reason
+                self.upcoming = nil
+            }
+        }
+    }
+
     private func updateQueue() {
+        guard !queueIsWeb else { return }
         guard let request = queueRequest, let playback, let queueReply, NotchQueueSupport.isEnabled() else {
             upcoming = nil
             return

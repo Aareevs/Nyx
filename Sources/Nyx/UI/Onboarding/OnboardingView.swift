@@ -536,6 +536,13 @@ private struct DoneStep: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 60)
+                // The one thing that needs a step outside Nyx, so it is said here once.
+                Label(l10n.s.obQueueTip, systemImage: "list.bullet")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .padding(.horizontal, 60)
+                    .padding(.top, 8)
             }
             .padding(.top, 36)
 

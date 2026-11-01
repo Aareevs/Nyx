@@ -30,6 +30,30 @@ final class SpotifyLibrary: ObservableObject {
     @Published private(set) var loading = false
     @Published private(set) var message: String?
 
+    /// The playlists in the order the user arranged them here. Spotify's own
+    /// order is untouched; a playlist never moved sits after the arranged ones.
+    @Published private(set) var order: [String] = UserDefaults.standard.stringArray(forKey: DefaultsKey.spotifyPlaylistOrder) ?? []
+
+    var orderedPlaylists: [SpotifyPlaylist] {
+        let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        return playlists.enumerated().sorted { a, b in
+            switch (rank[a.element.id], rank[b.element.id]) {
+            case let (x?, y?): return x < y
+            case (_?, nil): return true
+            case (nil, _?): return false
+            default: return a.offset < b.offset
+            }
+        }.map(\.element)
+    }
+
+    func move(_ playlist: SpotifyPlaylist, by step: Int) {
+        var ids = orderedPlaylists.map(\.id)
+        guard let from = ids.firstIndex(of: playlist.id), ids.indices.contains(from + step) else { return }
+        ids.swapAt(from, from + step)
+        order = ids
+        UserDefaults.standard.set(ids, forKey: DefaultsKey.spotifyPlaylistOrder)
+    }
+
     private var loaded = false
     private let auth = SpotifyAuth.shared
 
@@ -152,7 +176,9 @@ final class SpotifyLibrary: ObservableObject {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (data, response) = try await URLSession.shared.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard status == 200 else { throw status == 401 ? SpotifyError.rejected : SpotifyError.network }
+        guard status == 200 else {
+            throw status == 401 ? SpotifyError.rejected : status == 403 ? SpotifyError.notAllowed : SpotifyError.network
+        }
         return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
     }
 
@@ -175,7 +201,8 @@ final class SpotifyLibrary: ObservableObject {
 
     private static func describe(_ error: Error) -> String {
         switch error {
-        case SpotifyError.premiumRequired: return "Choosing songs needs Spotify Premium"
+        case SpotifyError.premiumRequired, SpotifyError.notAllowed:
+            return "You need a Spotify Premium account, and the developer has to add you first"
         case SpotifyError.noDevice: return "Open Spotify on this Mac, then try again"
         case SpotifyError.notConnected, SpotifyError.rejected: return "Spotify needs you to sign in again"
         default: return "Couldn't reach Spotify"

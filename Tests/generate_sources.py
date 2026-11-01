@@ -1958,7 +1958,7 @@ def main():
           + "var sources: [NotchPlaybackSource] = []\nvar sourceIsAutomatic = true\n"
           + "var artwork: NSObject?\nvar artworkTint: NotchArtworkTint?\n"
           + "func updateArtwork(_ image: NSImage?, tint: NotchArtworkTint?, playback: NotchPlayback?) { artwork = image; artworkTint = tint }\n"
-          + "let trackChanges = TrackChanges()\nlet trackEnds = TrackChanges()\nvar gapReading: Reading?\nvar gapWork: DispatchWorkItem?\nfunc updateQueue() {}\n"
+          + "let trackChanges = TrackChanges()\nlet trackEnds = TrackChanges()\nvar gapReading: Reading?\nvar gapWork: DispatchWorkItem?\nfunc updateQueue() {}\nvar queueIsWeb = false\nfunc refreshQueue() {}\n"
           + "func updateAutomation(for playback: NotchPlayback?) {}\nfunc setQueueVisible(_ visible: Bool) { queueVisible = visible }\n"
           + "var queueVisible = true\nvar queueLoading = false\nvar queueActionPending = false\n"
           + "var commandFailed = false\nvar queueActionFailed = false\nvar commandPending = false\n"
@@ -1992,13 +1992,13 @@ def main():
     write("NotchQueueSelection.swift", "import Foundation\n\nextension NotchQueueContract {\n"
           + "final class Service {\nvar queueVisible = true\nvar queueRequest: UUID?\n"
           + "var upcoming: NotchQueueSnapshot?\nvar playback: NotchPlayback?\n"
-          + "var queueActionFailed = false\nvar queueActionPending = false\nvar sendAllowed = true\n"
+          + "var queueActionFailed = false\nvar queueActionPending = false\nvar sendAllowed = true\nvar queueIsWeb = false\nfunc playWebQueued(_ item: NotchQueueItem) {}\n"
           + "var commands: [NotchPlaybackCommand] = []\n"
           + "func send(_ command: NotchPlaybackCommand) -> Bool { commands.append(command); return sendAllowed && command.message != nil }\n"
           + declaration(music, "    func playQueued(")
           + "}\n}\n")
     write("NotchQueueHold.swift", "import Foundation\n\nextension NotchQueueHoldContract {\n"
-          + "final class Service {\nvar queueEnabled = true\nvar queueRequest: UUID?\nvar queueReply: [String: Any]?\n"
+          + "final class Service {\nvar queueEnabled = true\nvar queueRequest: UUID?\nvar queueReply: [String: Any]?\nvar queueIsWeb = false\n"
           + "var playback: NotchPlayback?\nvar queueCovers = NotchQueueCovers<Data>()\nvar upcomingArtwork: [String: Data] = [:]\n"
           + declaration(music, "    @Published private(set) var upcoming:")
             .replace("@Published private(set) ", "", 1).replace("NSImage.init(data:)", "{ $0 }", 1)
