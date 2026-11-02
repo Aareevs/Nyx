@@ -9,6 +9,38 @@ enum NotchLockScreenActivity: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// How long the lock screen's own island animates over the island underneath:
+/// fading in as the Mac locks, and holding then fading out as it unlocks. The
+/// resting island stays out of sight for that long, so its time and weather
+/// are never drawn under the padlock. The lock screen's service uses these
+/// same numbers for its fades.
+struct NotchLockTransition: Equatable {
+    /// The padlock scene fading in as the Mac locks.
+    static let fadeIn: TimeInterval = 0.35
+    /// On unlocking, the padlock opens for this long before the scene leaves,
+    /// and then the scene fades out.
+    static let unlockHold: TimeInterval = 0.55
+    static let unlockFade: TimeInterval = 0.2
+    /// The island coming back holds the main thread for a moment, so the
+    /// fades start a little late; the resting content waits that out too.
+    static let slack: TimeInterval = 0.15
+
+    static func duration(locking: Bool) -> TimeInterval {
+        (locking ? fadeIn : unlockHold + unlockFade) + slack
+    }
+
+    private(set) var endsAt: TimeInterval = 0
+
+    /// A new change restarts the wait; a lock quickly followed by an unlock
+    /// keeps whichever ends last.
+    mutating func begin(locking: Bool, at now: TimeInterval) {
+        endsAt = max(endsAt, now + Self.duration(locking: locking))
+    }
+
+    func isActive(at now: TimeInterval) -> Bool { now < endsAt }
+    func remaining(at now: TimeInterval) -> TimeInterval { max(0, endsAt - now) }
+}
+
 enum NotchLockScreenSupport {
     /// The Space level macOS gives the notifications it shows over the lock
     /// screen, one step above the lock screen's own 300. A window in a Space

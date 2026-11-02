@@ -242,7 +242,9 @@ struct NyxSwitchToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         Self.onDraw?(configuration.isOn, isEnabled)
         return HStack(spacing: 8) {
-            configuration.label
+            // Every switch sits in a row that already names it, so the style
+            // draws none: current macOS keeps a hidden label in a custom
+            // style's body and a second copy of the name showed beside it.
             Button { configuration.isOn.toggle() } label: {
                 Capsule()
                     .fill(configuration.isOn ? Color.accentColor : Color.primary.opacity(0.2))

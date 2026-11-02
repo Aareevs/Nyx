@@ -27,6 +27,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchAlarmsEnabled) private var alarmsEnabled = true
     @AppStorage(DefaultsKey.notchAlarmsSound) private var alarmsSound = true
     @AppStorage(DefaultsKey.notchTeleprompterEnabled) private var teleprompterEnabled = true
+    @AppStorage(DefaultsKey.notchStreaksEnabled) private var streaksEnabled = false
     @AppStorage(DefaultsKey.notchTeleprompterHideFromCaptures) private var teleprompterHidden = true
     @AppStorage(DefaultsKey.notchLyricsEnabled) private var lyricsEnabled = true
     @AppStorage(DefaultsKey.notchLyricsOnline) private var lyricsOnline = false
@@ -562,6 +563,8 @@ struct NotchSettings: View {
                 set: { teleprompterHidden = $0; NotchService.shared.refreshCaptureSharing() }))
                 .disabled(!AppFeature.notchTeleprompter.isAvailable)
             Text(FeatureStrings.notchTeleprompter(l10n.language).hideHint).font(.caption).foregroundStyle(.secondary)
+        case .streaks:
+            NotchStreakSettingsControls()
         case .mixer, .system, .tools, .calculator:
             EmptyView()
         }
@@ -905,6 +908,7 @@ struct NotchSettings: View {
         case .calculator: return .notchCalculator
         case .alarms: return .notchAlarms
         case .teleprompter: return .notchTeleprompter
+        case .streaks: return .notchStreaks
         }
     }
 
@@ -986,10 +990,22 @@ struct NotchSettings: View {
                     HStack(spacing: 14) {
                         if item == .none, restsWithMascot {
                             restingMascot
+                        } else if item == .clock {
+                            // The time on the left and the weather on the right, as the
+                            // island shows them beside the camera.
+                            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                                Text("2:13").font(.system(size: 11, weight: .medium)).monospacedDigit()
+                                Text("PM").font(.system(size: 6.5, weight: .semibold))
+                            }.lineLimit(1).fixedSize()
+                            RoundedRectangle(cornerRadius: 4).fill(.black).frame(width: 20, height: 12)
+                            HStack(spacing: 2) {
+                                Text("\u{26C5}\u{FE0F}").font(.system(size: 10))
+                                Text("25\u{00B0}").font(.system(size: 11, weight: .medium)).monospacedDigit()
+                            }.lineLimit(1).fixedSize()
                         } else if item != .none {
                             Image(systemName: symbol).font(.system(size: 11))
                             RoundedRectangle(cornerRadius: 4).fill(.black).frame(width: 20, height: 12)
-                            if item == .battery || item == .agents { Text(item == .agents ? "62%" : "76%").font(.system(size: 9, weight: .medium)) }
+                            if item == .battery || item == .agents { Text(item == .agents ? "62%" : "76%").font(.system(size: 9, weight: .medium)).lineLimit(1).fixedSize() }
                             else { Image(systemName: item == .music ? "waveform" : "minus").font(.system(size: 9)) }
                         } else { Color.clear.frame(width: 50, height: 12) }
                     }.foregroundStyle(.white).padding(10).background(.black, in: Capsule())
@@ -1081,6 +1097,7 @@ struct NotchSettings: View {
                 && (module != .calculator || calculatorEnabled)
                 && (module != .alarms || alarmsEnabled)
                 && (module != .teleprompter || teleprompterEnabled)
+                && (module != .streaks || streaksEnabled)
                 && !hidden.split(separator: ",").contains(Substring(module.rawValue))
         } set: { shown in
             if module == .timer { timerEnabled = shown }
@@ -1092,6 +1109,7 @@ struct NotchSettings: View {
             if module == .calculator { calculatorEnabled = shown }
             if module == .alarms { alarmsEnabled = shown }
             if module == .teleprompter { teleprompterEnabled = shown }
+            if module == .streaks { streaksEnabled = shown; NotchStreakService.shared.preferencesChanged() }
             var values = Set(hidden.split(separator: ",").map(String.init))
             if shown { values.remove(module.rawValue) } else { values.insert(module.rawValue) }
             hidden = values.sorted().joined(separator: ",")

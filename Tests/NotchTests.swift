@@ -2301,6 +2301,13 @@ enum NotchTests {
                      && NotchControlItem.mixer.setupRequirement == .page(.mixer, feature: .mixer)
                      && NotchControlItem.speedTest.setupRequirement == .page(.system, feature: .monitorNetwork),
                      "page-gated controls lead to their island section or the required feature")
+        suite.expect(NotchControlItem.extraHidden.split(separator: ",").allSatisfy { NotchControlItem(rawValue: String($0)) != nil }
+                     && NotchControlItem.defaultHidden.hasSuffix(NotchControlItem.extraHidden),
+                     "the extra shortcut tiles are all real controls and start hidden")
+        suite.expect(NotchControlItem.colorPicker.setupRequirement == .feature(.colorPicker)
+                     && NotchControlItem.alarms.setupRequirement == .page(.alarms, feature: .notchAlarms)
+                     && NotchControlItem.alarms.module == .alarms && NotchControlItem.colorPicker.module == nil,
+                     "the extra tiles lead to their feature or island page")
         defaults.set("panel,panel,unknown,speedTest", forKey: DefaultsKey.notchControlOrder)
         defaults.set("volume,screenshot", forKey: DefaultsKey.notchHiddenControls)
         let controls = NotchSupport.controls(in: defaults)
@@ -2308,7 +2315,7 @@ enum NotchTests {
                "shortcut ordering tolerates duplicate and obsolete identifiers")
         suite.expect(!controls.contains(.volume) && !controls.contains(.screenshot), "individual controls can be hidden")
         defaults.set("", forKey: DefaultsKey.notchHiddenControls)
-        suite.expect(NotchSupport.controls(in: defaults).last == .scratchpad
+        suite.expect(NotchSupport.controls(in: defaults).contains(.scratchpad)
                && NotchQuickAction(id: NotchQuickAction.control(.scratchpad).id) == .control(.scratchpad)
                && NotchQuickAction.optionalActions.contains(.control(.scratchpad)),
                "the scratchpad shortcut can be shown among the controls and placed as a floating button")
@@ -2440,9 +2447,16 @@ enum NotchTests {
         suite.expect(NotchSupport.filteredModules([.controls, .music, .files], query: "  MÚSＩCA  ", title: {
             $0 == .music ? "Música" : "Arquivos"
         }) == [.music], "gallery search ignores accents, letter case, character width and surrounding spaces")
-        suite.expect(NotchSupport.filteredModules([.files, .controls], query: "arquivo novo", title: {
+        suite.expect(NotchSupport.filteredModules([.files, .controls], query: "novo arq", title: {
             $0 == .files ? "Novo arquivo" : "Controles"
-        }) == [.files], "gallery search matches every word independently of their order")
+        }) == [.files]
+               && NotchSupport.filteredModules([.files, .controls], query: "arq", title: {
+            $0 == .files ? "Novo arquivo" : "Controles"
+        }).isEmpty, "gallery search matches from the first letter of a name, not any letter inside it")
+        suite.expect(NotchSupport.filteredModules([.scratchpad, .controls, .files], query: "s", title: {
+            $0 == .scratchpad ? "Scratchpad" : ($0 == .controls ? "Controls\ncontrols" : "Files")
+        }) == [.scratchpad] && NotchSupport.filteredModules([.music], query: "mus", title: { _ in "Now Playing\nmusic" }) == [.music],
+               "gallery search checks each of a section's names from its first letter")
         suite.expect(NotchSupport.filteredModules(allModules, query: "", title: { $0.rawValue }) == allModules
                && NotchSupport.filteredModules(allModules, query: "unmatched", title: { $0.rawValue }).isEmpty,
                "empty queries preserve configured ordering and unmatched queries have no action")

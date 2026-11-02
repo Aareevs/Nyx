@@ -265,6 +265,8 @@ if (( TEST )); then
         Sources/Nyx/Core/NotchAlarmStrings.swift
         Sources/Nyx/Core/ColorPickerMath.swift
         Sources/Nyx/Services/Notch/NotchAlarmSupport.swift
+        Sources/Nyx/Core/NotchStreakStrings.swift
+        Sources/Nyx/Services/Notch/NotchStreakSupport.swift
         Sources/Nyx/Core/NotchTeleprompterStrings.swift
         Sources/Nyx/Services/Notch/NotchTeleprompterSupport.swift
         Sources/Nyx/Services/Notch/NotchWatchSupport.swift

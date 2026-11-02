@@ -787,6 +787,7 @@ enum DefaultsKey {
     // Travels with the controls so old backups migrate and later choices survive.
     static let notchScratchpadControlHidden = "notchScratchpadControlHidden"
     static let notchKeyboardLightControlHidden = "notchKeyboardLightControlHidden"
+    static let notchExtraControlsHidden = "notchExtraControlsHidden"
     static let notchControlOrder = "notchControlOrder"
     static let notchSize = "notchSize"
     static let notchOutlineEnabled = "notchOutlineEnabled"
@@ -838,6 +839,14 @@ enum DefaultsKey {
     static let notchAlarmsEnabled = "notchAlarmsEnabled"
     static let notchAlarmsSound = "notchAlarmsSound"
     static let notchAlarms = "notchAlarms" // JSON of [NotchAlarm]
+    static let notchStreaksEnabled = "notchStreaksEnabled"
+    static let notchStreakGitHub = "notchStreakGitHub"       // public GitHub username
+    static let notchStreakLeetCode = "notchStreakLeetCode"   // public LeetCode username
+    static let notchStreakReminder = "notchStreakReminder"
+    static let notchStreakReminderMinutes = "notchStreakReminderMinutes" // minutes after midnight
+    static let notchStreakSound = "notchStreakSound"
+    static let notchStreakCache = "notchStreakCache"         // JSON of the last counts, per service
+    static let notchStreakReminderDismissed = "notchStreakReminderDismissed" // local day Stop was pressed
     static let notchTeleprompterEnabled = "notchTeleprompterEnabled"
     static let notchTeleprompterScript = "notchTeleprompterScript"
     static let notchTeleprompterWPM = "notchTeleprompterWPM"
@@ -1356,6 +1365,7 @@ enum Defaults {
         DefaultsKey.notchHiddenControls: NotchControlItem.defaultHidden,
         DefaultsKey.notchScratchpadControlHidden: false,
         DefaultsKey.notchKeyboardLightControlHidden: false,
+        DefaultsKey.notchExtraControlsHidden: false,
         DefaultsKey.notchControlOrder: "",
         DefaultsKey.notchSize: NotchSize.spacious.rawValue,
         DefaultsKey.notchOutlineEnabled: false,
@@ -1430,6 +1440,10 @@ enum Defaults {
         DefaultsKey.notchCalculatorEnabled: true,
         DefaultsKey.notchAlarmsEnabled: true,
         DefaultsKey.notchAlarmsSound: true,
+        DefaultsKey.notchStreaksEnabled: false,
+        DefaultsKey.notchStreakReminder: true,
+        DefaultsKey.notchStreakReminderMinutes: NotchStreakSupport.defaultReminderMinutes,
+        DefaultsKey.notchStreakSound: true,
         DefaultsKey.notchTeleprompterEnabled: true,
         DefaultsKey.notchTeleprompterWPM: NotchTeleprompterSupport.defaultWPM,
         DefaultsKey.notchTeleprompterHideFromCaptures: true,
@@ -1936,6 +1950,7 @@ enum Defaults {
         recheckBrightnessDDCWriteOnlyPaths(in: defaults)
         hideScratchpadControlOnce(in: defaults)
         hideKeyboardLightControlOnce(in: defaults)
+        hideExtraControlsOnce(in: defaults)
         // The "all apps" output choice now lasts one session; a saved one
         // would move apps that chose their own output after every launch.
         defaults.removeObject(forKey: DefaultsKey.mixerUniversalOutputDevice)
@@ -1991,6 +2006,7 @@ enum Defaults {
         }
         let automaticKeys: Set<String> = [DefaultsKey.notchScratchpadControlHidden,
                                           DefaultsKey.notchKeyboardLightControlHidden,
+                                          DefaultsKey.notchExtraControlsHidden,
                                           DefaultsKey.notchHidesMenuBarIcon,
                                           DefaultsKey.notchAgentsOptInMigrated]
         let wasConfigured = saved.keys.contains {
@@ -2052,6 +2068,19 @@ enum Defaults {
         var hidden = saved.split(separator: ",").map(String.init)
         guard !hidden.contains(NotchControlItem.keyboardLight.rawValue) else { return }
         hidden.append(NotchControlItem.keyboardLight.rawValue)
+        defaults.set(hidden.joined(separator: ","), forKey: DefaultsKey.notchHiddenControls)
+    }
+
+    /// The extra shortcut tiles joined the hidden controls the same way, so a
+    /// list saved before them does not grow tiles nobody asked for.
+    static func hideExtraControlsOnce(in defaults: UserDefaults) {
+        guard !defaults.bool(forKey: DefaultsKey.notchExtraControlsHidden) else { return }
+        defaults.set(true, forKey: DefaultsKey.notchExtraControlsHidden)
+        guard let saved = defaults.string(forKey: DefaultsKey.notchHiddenControls) else { return }
+        var hidden = saved.split(separator: ",").map(String.init)
+        for item in NotchControlItem.extraHidden.split(separator: ",").map(String.init) where !hidden.contains(item) {
+            hidden.append(item)
+        }
         defaults.set(hidden.joined(separator: ","), forKey: DefaultsKey.notchHiddenControls)
     }
 

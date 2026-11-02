@@ -373,6 +373,10 @@ final class FeatureRuntime: ObservableObject {
             if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
             else { NotchAlarmService.shared.stop() }
         },
+        .notchStreaks: {
+            if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
+            else { NotchStreakService.shared.stop() }
+        },
         .notchTeleprompter: {
             if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
             else { NotchTeleprompterService.shared.stop() }

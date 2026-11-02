@@ -573,6 +573,7 @@ struct NotchView: View {
             case .calculator: NotchCalculatorView(size: pageSize)
             case .alarms: NotchAlarmsView(size: pageSize)
             case .teleprompter: NotchTeleprompterView(size: pageSize)
+            case .streaks: NotchStreaksView(size: pageSize)
             }
         }
     }
@@ -667,12 +668,14 @@ struct NotchRestingStrip: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 5))
                             }
                         case .battery:
-                            Image(systemName: batterySymbol).font(.system(size: 12))
+                            Image(systemName: batterySymbol).font(.system(size: 14))
                                 .foregroundStyle(batteryTint)
                                 .padding(.leading, restingBatteryInset)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         case .agents:
                             NotchAgentRestingWing(leading: true)
                                 .padding(.leading, restingBatteryInset)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         case .clock:
                             NotchRestingTime().padding(.leading, restingBatteryInset)
                         case .none: EmptyView()
@@ -692,14 +695,16 @@ struct NotchRestingStrip: View {
                             }
                         case .battery:
                             if let percent = service.power.chargePercent {
-                                Text("\(percent)%").font(.system(size: 9, weight: .medium)).monospacedDigit()
+                                Text("\(percent)%").font(.system(size: 12, weight: .medium)).monospacedDigit()
                                     .foregroundStyle(batteryTint)
-                                    .lineLimit(1)
+                                    .lineLimit(1).minimumScaleFactor(0.8)
                                     .padding(.trailing, restingBatteryInset)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                             }
                         case .agents:
                             NotchAgentRestingWing(leading: false)
                                 .padding(.trailing, restingBatteryInset)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                         case .clock:
                             NotchRestingWeather().padding(.trailing, restingBatteryInset)
                         case .none: EmptyView()
@@ -729,6 +734,14 @@ struct NotchRestingStrip: View {
             }
         }
         .foregroundStyle(.white.opacity(0.9))
+        // Fading out as the Mac locks and out of sight until it is unlocked
+        // and the padlock has gone; hidden at once on unlock, back with a
+        // short fade once that is done.
+        .opacity(service.lockTransitionActive ? 0 : 1)
+        .animation(reduceMotion ? nil
+                   : service.lockTransitionActive ? (service.lockTransitionLocking ? .easeOut(duration: 0.2) : nil)
+                   : .easeIn(duration: 0.25),
+                   value: service.lockTransitionActive)
         // The strip stays in its band at the top: hover grows the island
         // around it, and centring it in the taller shape dropped it half
         // the growth in one frame.
@@ -806,6 +819,7 @@ extension NotchModule: PanelOrderItem {
         case .calculator: return FeatureStrings.notchCalculator(language).title
         case .alarms: return FeatureStrings.notchAlarms(language).title
         case .teleprompter: return FeatureStrings.notchTeleprompter(language).title
+        case .streaks: return FeatureStrings.notchStreaks(language).title
         }
     }
 }

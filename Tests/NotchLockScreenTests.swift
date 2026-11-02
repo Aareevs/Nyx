@@ -11,6 +11,7 @@ enum NotchLockScreenTests {
         layoutContracts(suite)
         contentContracts(suite)
         soundContracts(suite)
+        transitionContracts(suite)
     }
 
     static func sessionContracts(_ suite: TestSuite) {
@@ -190,5 +191,30 @@ enum NotchLockScreenTests {
         suite.expect(lock != nil && unlock != nil && lock != unlock, "locking and unlocking each have their own sound")
         suite.expect([lock, unlock].allSatisfy { $0.map { FileManager.default.fileExists(atPath: $0.path) } == true },
                      "both sounds are files this Mac has")
+    }
+
+    static func transitionContracts(_ suite: TestSuite) {
+        var transition = NotchLockTransition()
+        suite.expect(!transition.isActive(at: 100), "with no lock or unlock, the resting content shows")
+        transition.begin(locking: true, at: 100)
+        let lockEnd = 100 + NotchLockTransition.fadeIn + NotchLockTransition.slack
+        suite.expect(transition.isActive(at: 100) && transition.isActive(at: lockEnd - 0.01)
+                     && !transition.isActive(at: lockEnd + 0.01),
+                     "locking hides the resting content from the start until the padlock has faded in")
+        var unlock = NotchLockTransition()
+        unlock.begin(locking: false, at: 50)
+        let unlockEnd = 50 + NotchLockTransition.unlockHold + NotchLockTransition.unlockFade + NotchLockTransition.slack
+        suite.expect(unlock.isActive(at: 50.5) && unlock.isActive(at: 50.7) && unlock.isActive(at: unlockEnd - 0.01)
+                     && !unlock.isActive(at: unlockEnd + 0.01),
+                     "unlocking keeps the resting content hidden until the padlock scene has left")
+        suite.expect(NotchLockTransition.duration(locking: false) > NotchLockTransition.duration(locking: true),
+                     "the unlock holds the island longer than the lock fades in")
+        var quick = NotchLockTransition()
+        quick.begin(locking: false, at: 10)
+        quick.begin(locking: true, at: 10.1)
+        suite.expect(quick.isActive(at: 10 + NotchLockTransition.duration(locking: false) - 0.01),
+                     "a lock right after an unlock never shortens the wait")
+        suite.expect(abs(transition.remaining(at: 100) - NotchLockTransition.duration(locking: true)) < 0.0001
+                     && transition.remaining(at: 200) == 0, "the time left counts down to nothing")
     }
 }

@@ -4,7 +4,7 @@ import Foundation
 import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms, teleprompter
+    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms, teleprompter, streaks
     var id: String { rawValue }
 
     var symbol: String {
@@ -31,6 +31,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .calculator: return "plus.forwardslash.minus"
         case .alarms: return "alarm"
         case .teleprompter: return "text.alignleft"
+        case .streaks: return "flame"
         }
     }
 
@@ -56,6 +57,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .calculator: return "k"
         case .alarms: return "l"
         case .teleprompter: return "e"
+        case .streaks: return "j"
         }
     }
 
@@ -82,6 +84,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .calculator: return AppFeature.notchCalculator.isAvailable(in: defaults)
         case .alarms: return AppFeature.notchAlarms.isAvailable(in: defaults)
         case .teleprompter: return AppFeature.notchTeleprompter.isAvailable(in: defaults)
+        case .streaks: return AppFeature.notchStreaks.isAvailable(in: defaults)
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .connectedDevices].contains { (feature: AppFeature) in
@@ -1292,7 +1295,11 @@ enum NotchControlSetupRequirement: Equatable {
 
 enum NotchControlItem: String, CaseIterable, Identifiable {
     case volume, brightness, keyboardLight, music, mixer, keepAwake, timer, calendar, microphone, screenshot, recording, speedTest, panel, commandBar, scratchpad
-    static let defaultHidden = "keyboardLight,microphone,screenshot,recording,speedTest,panel,commandBar,scratchpad"
+    // More tiles to choose from in Settings. All start hidden.
+    case colorPicker, screenText, clipboard, camera, cleaning, calculator, alarms, teleprompter, streaks
+    static let defaultHidden = "keyboardLight,microphone,screenshot,recording,speedTest,panel,commandBar,scratchpad," + extraHidden
+    /// The tiles added after the first set, hidden until someone picks them.
+    static let extraHidden = "colorPicker,screenText,clipboard,camera,cleaning,calculator,alarms,teleprompter,streaks"
     var id: String { rawValue }
 
     /// A level draws as a slider in the card row; everything else is a tile.
@@ -1322,6 +1329,28 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .music: return NotchModule.music.symbol
         case .timer: return NotchModule.timer.symbol
         case .calendar: return NotchModule.calendar.symbol
+        case .colorPicker: return "eyedropper"
+        case .screenText: return "text.viewfinder"
+        case .clipboard: return NotchModule.clipboard.symbol
+        case .camera: return NotchModule.camera.symbol
+        case .cleaning: return "keyboard"
+        case .calculator: return NotchModule.calculator.symbol
+        case .alarms: return NotchModule.alarms.symbol
+        case .teleprompter: return NotchModule.teleprompter.symbol
+        case .streaks: return NotchModule.streaks.symbol
+        }
+    }
+
+    /// The island page a tile opens, for the tiles that are a page's shortcut.
+    var module: NotchModule? {
+        switch self {
+        case .clipboard: return .clipboard
+        case .camera: return .camera
+        case .calculator: return .calculator
+        case .alarms: return .alarms
+        case .teleprompter: return .teleprompter
+        case .streaks: return .streaks
+        default: return nil
         }
     }
 
@@ -1341,6 +1370,15 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .music: return .page(.music, feature: nil)
         case .timer: return .page(.timer, feature: .notchTimer)
         case .calendar: return .page(.calendar, feature: .notchCalendar)
+        case .colorPicker: return .feature(.colorPicker)
+        case .screenText: return .feature(.screenOCR)
+        case .cleaning: return .feature(.cleaningMode)
+        case .clipboard: return .page(.clipboard, feature: .clipboardHistory)
+        case .camera: return .page(.camera, feature: .cameraPreview)
+        case .calculator: return .page(.calculator, feature: .notchCalculator)
+        case .alarms: return .page(.alarms, feature: .notchAlarms)
+        case .teleprompter: return .page(.teleprompter, feature: .notchTeleprompter)
+        case .streaks: return .page(.streaks, feature: .notchStreaks)
         }
     }
 
@@ -1361,6 +1399,15 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .music: return NotchSupport.modules(in: defaults).contains(.music)
         case .timer: return NotchSupport.modules(in: defaults).contains(.timer)
         case .calendar: return NotchSupport.modules(in: defaults).contains(.calendar)
+        case .colorPicker: return AppFeature.colorPicker.isAvailable(in: defaults)
+        case .screenText: return AppFeature.screenOCR.isAvailable(in: defaults)
+        case .cleaning: return AppFeature.cleaningMode.isAvailable(in: defaults)
+        case .clipboard: return NotchSupport.modules(in: defaults).contains(.clipboard)
+        case .camera: return NotchSupport.modules(in: defaults).contains(.camera)
+        case .calculator: return NotchSupport.modules(in: defaults).contains(.calculator)
+        case .alarms: return NotchSupport.modules(in: defaults).contains(.alarms)
+        case .teleprompter: return NotchSupport.modules(in: defaults).contains(.teleprompter)
+        case .streaks: return NotchSupport.modules(in: defaults).contains(.streaks)
         }
     }
 }
@@ -1698,11 +1745,15 @@ enum NotchSupport {
 
     static func filteredModules(_ modules: [NotchModule], query: String,
                                 title: (NotchModule) -> String) -> [NotchModule] {
-        let terms = CommandBarSearch.normalized(query).split(separator: " ")
-        guard !terms.isEmpty else { return modules }
+        let typed = CommandBarSearch.normalized(query)
+        guard !typed.isEmpty else { return modules }
+        // A name matches when what was typed is how it begins, so "s" finds
+        // Scratchpad and not every name with an s somewhere inside. A title
+        // may offer several names, one per line.
         return modules.filter { module in
-            let name = CommandBarSearch.normalized(title(module))
-            return terms.allSatisfy { name.contains($0) }
+            title(module).split(separator: "\n").contains { name in
+                CommandBarSearch.normalized(String(name)).hasPrefix(typed)
+            }
         }
     }
 
@@ -1876,6 +1927,7 @@ enum NotchSupport {
                 && ($0 != .calculator || defaults.bool(forKey: DefaultsKey.notchCalculatorEnabled))
                 && ($0 != .alarms || defaults.bool(forKey: DefaultsKey.notchAlarmsEnabled))
                 && ($0 != .teleprompter || defaults.bool(forKey: DefaultsKey.notchTeleprompterEnabled))
+                && ($0 != .streaks || defaults.bool(forKey: DefaultsKey.notchStreaksEnabled))
         }
     }
 
@@ -2378,6 +2430,14 @@ struct NotchGeometry: Equatable {
         result.pageTop = module.pageTop
         result.pageContentWidth = NotchLayout.naturalContentWidth(module, controls: controls, within: contentWidth)
         result.sectionsButtonInRow = sectionsButton
+        // Levels that cannot sit beside the camera go in a row of their own
+        // below it, so the page needs no top row of its own: without one the
+        // sliders start right under the camera instead of under an empty row.
+        if module == .controls, result.headerCameraGap == 0 {
+            let levels = controls.filter(\.isLevel).count
+            let band = NotchBand(geometry: result, contentWidth: result.contentWidth)
+            if levels > 0, NotchLayout.bandLevelCount(levels, band: band) == 0 { result.pageTop = .none }
+        }
         return result
     }
     /// A capsule's row keeps clear of its rounded top corners, its 28-point
@@ -2801,7 +2861,7 @@ struct NotchGeometry: Equatable {
                 // Only the cards a person chose; a short set leaves a short island.
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
             // Lists and previews fill the chosen content budget.
-            case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch, .calculator, .alarms:
+            case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch, .calculator, .alarms, .streaks:
                 contentHeight = budget
             case .teleprompter:
                 // The page has its own size, chosen on the page itself.

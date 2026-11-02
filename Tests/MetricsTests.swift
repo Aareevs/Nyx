@@ -142,6 +142,7 @@ struct MetricsTests {
             ("alarms", { NotchAlarmTests.run(suite) }),
             ("colorpicker", { ColorPickerMathTests.run(suite) }),
             ("teleprompter", { NotchTeleprompterTests.run(suite) }),
+            ("streaks", { NotchStreakTests.run(suite) }),
             ("feature-hub-layout", { FeatureHubLayoutTests.run(suite) }),
             ("display-restoration", {
                 DisplayRestorationTests.run(suite)

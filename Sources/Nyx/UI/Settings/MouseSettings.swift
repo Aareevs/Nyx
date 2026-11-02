@@ -360,9 +360,17 @@ struct MouseSettings: View {
                                   ... Double(FocusFollowsMouseSupport.delayRange.upperBound),
                               step: 50,
                               readout: "\(focusFollowsMouseDelay) ms")
-                    Toggle(l10n.s.focusFollowsMouseRaise, isOn: $focusFollowsMouseRaise)
+                    HStack {
+                        Text(l10n.s.focusFollowsMouseRaise)
+                        Spacer(minLength: 8)
+                        Toggle(l10n.s.focusFollowsMouseRaise, isOn: $focusFollowsMouseRaise).labelsHidden()
+                    }
                     if !focusFollowsMouseRaise {
-                        Toggle(l10n.s.focusFollowsMouseWaitForStop, isOn: $focusFollowsMouseWaitForStop)
+                        HStack {
+                            Text(l10n.s.focusFollowsMouseWaitForStop)
+                            Spacer(minLength: 8)
+                            Toggle(l10n.s.focusFollowsMouseWaitForStop, isOn: $focusFollowsMouseWaitForStop).labelsHidden()
+                        }
                     }
                     MouseExceptionsList(scope: .focusFollowsMouse)
                 }

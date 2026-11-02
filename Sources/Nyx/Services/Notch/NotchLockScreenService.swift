@@ -137,13 +137,13 @@ final class NotchLockScreenService {
         if closingPadlock {
             let work = DispatchWorkItem { [weak self] in self?.model.padlockOpen = false }
             padlockWork = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
+            DispatchQueue.main.asyncAfter(deadline: .now() + NotchLockTransition.fadeIn, execute: work)
         }
         for panel in panels {
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.35
+                context.duration = NotchLockTransition.fadeIn
                 panel.animator().alphaValue = 1
             }
         }
@@ -206,12 +206,12 @@ final class NotchLockScreenService {
             // The island comes back on this turn and holds the main thread, so
             // the padlock is first seen opening once that is done. Its time
             // starts there, or the island would fade while the padlock opens.
-            DispatchQueue.main.async { Self.fadeOut(island, after: 0.55, completion: finished) }
+            DispatchQueue.main.async { Self.fadeOut(island, after: NotchLockTransition.unlockHold, completion: finished) }
         }
     }
 
     private static func fadeOut(_ panel: NSPanel, after delay: TimeInterval, completion: @escaping () -> Void) {
-        let duration: TimeInterval = 0.2
+        let duration = NotchLockTransition.unlockFade
         let fade = {
             // AppKit steps its fades on the main thread, which the island
             // coming back holds as the Mac unlocks, so the player could stay

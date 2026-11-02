@@ -51,12 +51,7 @@ struct NotchLockScreenIsland: View {
             .fill(.black)
             .overlay {
                 HStack(spacing: 0) {
-                    Image(systemName: model.padlockOpen ? "lock.open.fill" : "lock.fill")
-                        .font(.system(size: min(13, size.height * 0.42), weight: .semibold))
-                        .foregroundStyle(.white)
-                        .contentTransition(.symbolEffect(.replace))
-                        .symbolEffect(.bounce, options: .speed(1.4), value: reduceMotion ? false : model.padlockOpen)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: model.padlockOpen)
+                    NotchPadlock(open: model.padlockOpen, height: min(17, size.height * 0.52), animated: !reduceMotion)
                         .frame(width: padlockSide, height: padlockSide)
                         .padding(.leading, max(0, min(geometry.compactMusicArtworkInset, wing - padlockSide)))
                         .frame(width: wing, height: size.height, alignment: .leading)
@@ -75,6 +70,70 @@ struct NotchLockScreenIsland: View {
             .padding(.top, origin.y)
             .frame(width: window?.width ?? size.width, height: window?.height ?? size.height, alignment: .topLeading)
             .accessibilityHidden(true)
+    }
+}
+
+/// A padlock whose shackle hooks into its body. The arch stays fixed on the
+/// left leg; its right end drops down into the body as the Mac locks and
+/// lifts clear of it as it unlocks, the way an opened padlock's shackle
+/// hangs free on one side. The right end travels along the arch and then
+/// straight down, so it reads as one smooth motion, not a swap of pictures.
+struct NotchPadlock: View {
+    let open: Bool
+    /// The padlock's overall height; its width is a little under that.
+    let height: CGFloat
+    var animated = true
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            Shackle(closed: open ? 0 : 1)
+                .stroke(.white, style: StrokeStyle(lineWidth: height * 0.12, lineCap: .round, lineJoin: .round))
+                .frame(width: height, height: height)
+            RoundedRectangle(cornerRadius: height * 0.06, style: .continuous)
+                .fill(.white)
+                .frame(width: height * 0.8, height: height * 0.54)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+        .frame(width: height, height: height)
+        .animation(animated ? (open ? .smooth(duration: 0.32)
+                                    : .spring(response: 0.4, dampingFraction: 0.62)) : nil, value: open)
+        .accessibilityHidden(true)
+    }
+
+    /// The shackle's path, drawn on a square of the padlock's height. `closed`
+    /// runs from 0, the right end hanging free above the body, to 1, hooked
+    /// into it; past 1 it only sinks further into the body.
+    private struct Shackle: Shape {
+        var closed: CGFloat
+        var animatableData: CGFloat {
+            get { closed }
+            set { closed = newValue }
+        }
+
+        func path(in rect: CGRect) -> Path {
+            let h = rect.height
+            let radius = 0.2515 * h
+            let centerX = rect.midX
+            let centerY = rect.minY + 0.3766 * h
+            let bodyTop = rect.minY + 0.46 * h
+            let freeEnd = rect.minY + 0.2 * h
+            let hookedEnd = bodyTop + 0.1 * h
+            let endY = freeEnd + (hookedEnd - freeEnd) * closed
+            var path = Path()
+            path.move(to: CGPoint(x: centerX - radius, y: hookedEnd))
+            path.addLine(to: CGPoint(x: centerX - radius, y: centerY))
+            if endY >= centerY {
+                path.addArc(center: CGPoint(x: centerX, y: centerY), radius: radius,
+                            startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+                path.addLine(to: CGPoint(x: centerX + radius, y: endY))
+            } else {
+                // Still on the arch: it stops short of the right-hand side.
+                let rise = Angle(radians: asin(min(1, (centerY - endY) / radius)))
+                path.addArc(center: CGPoint(x: centerX, y: centerY), radius: radius,
+                            startAngle: .degrees(180), endAngle: .degrees(-rise.degrees), clockwise: false)
+            }
+            return path
+        }
     }
 }
 

@@ -19,6 +19,15 @@ struct NotchNotice: Equatable {
     /// A ringing alarm stays on the island until it is stopped, with a Stop
     /// button, whatever the timer's own notice is set to do.
     var persistent = false
+    /// The streak reminder is persistent too, but stops through its own service.
+    var streakReminder = false
+    /// A logo from Resources/Images shown in place of the symbol, for a streak.
+    var logo: String? = nil
+    /// Shown even when its event's notices are switched off, as a notice the
+    /// feature itself raises.
+    var forced = false
+    /// How long a notice stays, when it is not its event's usual time.
+    var duration: TimeInterval? = nil
     /// A banner that replaces one still on screen keeps at least its wings,
     /// so a burst of messages does not resize the island with each one.
     var minimumWings = NotchNoticeWings.zero
@@ -56,7 +65,9 @@ struct NotchNotice: Equatable {
         let mark = fitted(leading > 0 ? leading + 18 + 8 : 18)
         guard level == nil else { return NotchNoticeWings(leading: mark, trailing: mark) }
         // A button's side holds its label and the padding around it.
-        let trailing = (detail as NSString).size(withAttributes: [.font: font]).width + (persistent ? 24 : 0)
+        // A streak's flame takes room beside its words.
+        let trailing = (detail as NSString).size(withAttributes: [.font: font]).width
+            + (persistent ? 24 : 0) + (logo != nil ? 22 : 0)
         return NotchNoticeWings(leading: mark, trailing: fitted(trailing))
     }
 
@@ -130,6 +141,14 @@ final class NotchService: ObservableObject {
     @Published private(set) var showingAppPanel = false
     @Published private(set) var showingSections = false
     @Published private(set) var sectionQuery = ""
+    /// The lock screen's island is fading in or out over this one, so what the
+    /// island rests with stays hidden until the animation is done.
+    @Published private(set) var lockTransitionActive = false
+    /// Whether the change under way is the Mac locking, which fades the resting
+    /// content out; unlocking hides it at once instead.
+    @Published private(set) var lockTransitionLocking = false
+    private var lockTransition = NotchLockTransition()
+    private var lockTransitionWork: DispatchWorkItem?
     @Published var highlightedSection: NotchModule? { didSet { revealHighlightedSection() } }
     /// The gallery's first visible row; the rows above it have stepped away.
     @Published private(set) var sectionRow = 0
@@ -1150,6 +1169,7 @@ final class NotchService: ObservableObject {
         NotchWatchService.shared.syncWithPreferences()
         // Alarms ring whether or not the island is open, even with the lid closed.
         NotchAlarmService.shared.syncWithPreferences()
+        NotchStreakService.shared.syncWithPreferences()
         refreshCaptureSharing()
         // Requested file work can continue while locked, but disabling its
         // feature must still cancel it before presentation resumes.
@@ -1732,12 +1752,12 @@ final class NotchService: ObservableObject {
     private func releaseNotification() {
         guard let notice, notice.notificationID != nil else { return }
         if noticeExpanded { dismissNotice() }
-        else if noticeWork == nil { scheduleNoticeDismissal(after: notice.event.duration) }
+        else if noticeWork == nil { scheduleNoticeDismissal(after: notice.duration ?? notice.event.duration) }
     }
 
     private func syncNoticeWithPreferences() {
         guard let notice else { return }
-        if (!notice.persistent && !NotchSupport.routes(notice.event)) || (notice.notificationID != nil && hiddenUntilHover) {
+        if (!notice.persistent && !notice.forced && !NotchSupport.routes(notice.event)) || (notice.notificationID != nil && hiddenUntilHover) {
             dismissNotice()
         }
     }
@@ -1753,7 +1773,7 @@ final class NotchService: ObservableObject {
         NotchSupport.filteredModules(modules, query: sectionQuery) { module in
             let language = L10n.shared.language
             let music = module == .music ? FeatureStrings.notch(language).music : ""
-            return [module.title(language), module.rawValue, music].joined(separator: " ")
+            return [module.title(language), module.rawValue, music].joined(separator: "\n")
         }
     }
 
@@ -1906,6 +1926,11 @@ final class NotchService: ObservableObject {
             case .calendar: select(.calendar)
             case .commandBar: perform { CommandBarService.shared.show() }
             case .scratchpad: openScratchpad()
+            case .colorPicker: perform { ColorPickerPanelService.shared.show() }
+            case .screenText: perform { ScreenTextService.shared.capture() }
+            case .cleaning: perform { CleaningModeManager.shared.activate() }
+            case .clipboard, .camera, .calculator, .alarms, .teleprompter, .streaks:
+                if let module = item.module { select(module) }
             case .volume, .brightness, .keyboardLight: select(.controls)
             }
         }
@@ -2310,7 +2335,7 @@ final class NotchService: ObservableObject {
     func show(_ incoming: NotchNotice) -> Bool {
         // Nothing else takes the place of a ringing alarm.
         guard notice?.persistent != true || incoming.persistent else { return false }
-        guard showsSystemFeedback, incoming.persistent || NotchSupport.routes(incoming.event),
+        guard showsSystemFeedback, incoming.persistent || incoming.forced || NotchSupport.routes(incoming.event),
               NotchSupport.shouldReplace(notice?.event, with: incoming.event, held: noticeExpanded) else { return false }
         noticeWork?.cancel(); noticeWork = nil
         var incoming = incoming
@@ -2338,7 +2363,7 @@ final class NotchService: ObservableObject {
             inside = true
             holdNotification(id)
         } else if !incoming.persistent {
-            scheduleNoticeDismissal(after: incoming.event.duration)
+            scheduleNoticeDismissal(after: incoming.duration ?? incoming.event.duration)
         }
         return true
     }
@@ -2347,7 +2372,8 @@ final class NotchService: ObservableObject {
         guard notice == selectedNotice else { return }
         // A click anywhere on a ringing alarm's notice is its Stop button.
         if selectedNotice.persistent {
-            NotchAlarmService.shared.dismiss()
+            if selectedNotice.streakReminder { NotchStreakService.shared.dismissReminder() }
+            else { NotchAlarmService.shared.dismiss() }
             return
         }
         if let id = selectedNotice.notificationID {
@@ -2470,10 +2496,18 @@ final class NotchService: ObservableObject {
     }
 
     /// Whether a ringing alarm's notice is on the island now.
-    var showsAlarmNotice: Bool { notice?.persistent == true }
+    var showsAlarmNotice: Bool { notice?.persistent == true && notice?.streakReminder != true }
 
     func dismissAlarmNotice() {
-        guard notice?.persistent == true else { return }
+        guard notice?.persistent == true, notice?.streakReminder != true else { return }
+        dismissNotice()
+    }
+
+    /// Whether the streak reminder's notice is on the island now.
+    var showsStreakNotice: Bool { notice?.streakReminder == true }
+
+    func dismissStreakNotice() {
+        guard notice?.streakReminder == true else { return }
         dismissNotice()
     }
 
@@ -3825,12 +3859,31 @@ final class NotchService: ObservableObject {
         observers.append((center, token))
     }
 
+    /// Fades the resting content out as the Mac locks and keeps it out of
+    /// sight for as long as it stays locked, so it never shows through the
+    /// padlock. On unlock it is hidden at once and comes back once the lock
+    /// screen's fade is over.
+    private func beginLockTransition(locking: Bool) {
+        let now = ProcessInfo.processInfo.systemUptime
+        lockTransition.begin(locking: locking, at: now)
+        lockTransitionLocking = locking
+        lockTransitionActive = true
+        lockTransitionWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.lockTransitionActive = false }
+        lockTransitionWork = work
+        // A lock waits for its unlock; the long timeout only guards against
+        // an unlock that is never announced.
+        let wait = locking ? 600 : lockTransition.remaining(at: now)
+        DispatchQueue.main.asyncAfter(deadline: .now() + wait, execute: work)
+    }
+
     private func updateSession(_ change: (inout NotchSessionState) -> Void) {
         guard running else { return }
         let couldPresent = session.canPresent
         let timerCouldRun = session.canRunTimer
         let wasLocked = session.locked
         change(&session)
+        if session.locked != wasLocked, NotchLockScreenSupport.isEnabled() { beginLockTransition(locking: session.locked) }
         // An unlock is someone at the Mac, even when the display's wake is
         // announced after it.
         if session.locked != wasLocked, session.locked ? session.hearsLockChange : session.onConsole,

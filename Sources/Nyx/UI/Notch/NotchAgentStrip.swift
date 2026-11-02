@@ -137,20 +137,21 @@ struct NotchAgentRestingWing: View {
             let tint = agentLimitTint(limit.provider, usedFraction: limit.window.usedFraction)
             if leading {
                 NotchAgentRing(value: used ? limit.window.usedFraction : limit.window.remainingFraction,
-                               tint: tint, lineWidth: 2)
-                    .frame(width: 11, height: 11)
+                               tint: tint, lineWidth: 2.2)
+                    .frame(width: 14, height: 14)
             } else {
                 Text(AgentFormat.percent(used ? limit.window.usedFraction : limit.window.remainingFraction))
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .monospacedDigit()
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
         } else if let provider = AgentProvider.allCases.first(where: snapshot.seen.contains) {
             if leading {
-                NotchAgentMark(provider: provider, size: 10)
+                NotchAgentMark(provider: provider, size: 13)
             } else {
                 Text(AgentFormat.cost(snapshot.usage(.today).total.cost))
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
