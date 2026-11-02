@@ -69,6 +69,7 @@ struct NotchEditorStrings {
     let watchSummary: String
     let calculatorSummary: String
     let alarmsSummary: String
+    let teleprompterSummary: String
 
     func enableFeature(_ title: String) -> String { String(format: enableFeatureFormat, title) }
     func enableSetting(_ title: String) -> String { String(format: enableSettingFormat, title) }
@@ -95,6 +96,7 @@ struct NotchEditorStrings {
         case .watch: return watchSummary
         case .calculator: return calculatorSummary
         case .alarms: return alarmsSummary
+        case .teleprompter: return teleprompterSummary
         }
     }
 }
@@ -170,7 +172,8 @@ extension FeatureStrings {
             agentsSummary: "Claude Code, Codex, OpenCode and GitHub Copilot usage, limits and costs.",
             watchSummary: "Any part of a window, read live, with an alert when it changes.",
             calculatorSummary: "Arithmetic, trigonometry and calculus, with complex numbers.",
-            alarmsSummary: "Alarms that ring from the island, once or on chosen days."
+            alarmsSummary: "Alarms that ring from the island, once or on chosen days.",
+            teleprompterSummary: "A scrolling script to read from, with speed control."
         )
         }
     }

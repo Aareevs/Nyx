@@ -836,6 +836,11 @@ enum DefaultsKey {
     static let notchAlarmsEnabled = "notchAlarmsEnabled"
     static let notchAlarmsSound = "notchAlarmsSound"
     static let notchAlarms = "notchAlarms" // JSON of [NotchAlarm]
+    static let notchTeleprompterEnabled = "notchTeleprompterEnabled"
+    static let notchTeleprompterScript = "notchTeleprompterScript"
+    static let notchTeleprompterWPM = "notchTeleprompterWPM"
+    static let notchTeleprompterSize = "notchTeleprompterSize" // small, medium or large island on the teleprompter page
+    static let notchTeleprompterHideFromCaptures = "notchTeleprompterHideFromCaptures" // keep the island out of recordings while reading
     static let notchCalculatorMode = "notchCalculatorMode" // CalculatorMode.rawValue
     static let notchCalculatorAngle = "notchCalculatorAngle" // CalculatorAngle.rawValue
     static let notchWatchSound = "notchWatchSound"
@@ -1423,6 +1428,10 @@ enum Defaults {
         DefaultsKey.notchCalculatorEnabled: true,
         DefaultsKey.notchAlarmsEnabled: true,
         DefaultsKey.notchAlarmsSound: true,
+        DefaultsKey.notchTeleprompterEnabled: true,
+        DefaultsKey.notchTeleprompterWPM: NotchTeleprompterSupport.defaultWPM,
+        DefaultsKey.notchTeleprompterHideFromCaptures: true,
+        DefaultsKey.notchTeleprompterSize: NotchTeleprompterSize.medium.rawValue,
         DefaultsKey.notchCalculatorMode: "basic",
         DefaultsKey.notchCalculatorAngle: CalculatorAngle.degrees.rawValue,
         DefaultsKey.notchWatchSound: true,

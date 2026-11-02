@@ -26,6 +26,8 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchCalculatorEnabled) private var calculatorEnabled = true
     @AppStorage(DefaultsKey.notchAlarmsEnabled) private var alarmsEnabled = true
     @AppStorage(DefaultsKey.notchAlarmsSound) private var alarmsSound = true
+    @AppStorage(DefaultsKey.notchTeleprompterEnabled) private var teleprompterEnabled = true
+    @AppStorage(DefaultsKey.notchTeleprompterHideFromCaptures) private var teleprompterHidden = true
     @AppStorage(DefaultsKey.notchLyricsEnabled) private var lyricsEnabled = true
     @AppStorage(DefaultsKey.notchLyricsOnline) private var lyricsOnline = false
     @AppStorage(DefaultsKey.notchBrowserCovers) private var browserCovers = false
@@ -554,6 +556,12 @@ struct NotchSettings: View {
             switchRow("speaker.wave.2", FeatureStrings.notchAlarms(l10n.language).sound, isOn: $alarmsSound)
                 .disabled(!AppFeature.notchAlarms.isAvailable)
             Text(FeatureStrings.notchAlarms(l10n.language).soundHint).font(.caption).foregroundStyle(.secondary)
+        case .teleprompter:
+            switchRow("eye.slash", FeatureStrings.notchTeleprompter(l10n.language).hideSetting, isOn: Binding(
+                get: { teleprompterHidden },
+                set: { teleprompterHidden = $0; NotchService.shared.refreshCaptureSharing() }))
+                .disabled(!AppFeature.notchTeleprompter.isAvailable)
+            Text(FeatureStrings.notchTeleprompter(l10n.language).hideHint).font(.caption).foregroundStyle(.secondary)
         case .mixer, .system, .tools, .calculator:
             EmptyView()
         }
@@ -896,6 +904,7 @@ struct NotchSettings: View {
         case .watch: return .notchWatch
         case .calculator: return .notchCalculator
         case .alarms: return .notchAlarms
+        case .teleprompter: return .notchTeleprompter
         }
     }
 
@@ -1071,6 +1080,7 @@ struct NotchSettings: View {
                 && (module != .agents || agentsEnabled) && (module != .watch || watchEnabled)
                 && (module != .calculator || calculatorEnabled)
                 && (module != .alarms || alarmsEnabled)
+                && (module != .teleprompter || teleprompterEnabled)
                 && !hidden.split(separator: ",").contains(Substring(module.rawValue))
         } set: { shown in
             if module == .timer { timerEnabled = shown }
@@ -1081,6 +1091,7 @@ struct NotchSettings: View {
             if module == .watch { watchEnabled = shown }
             if module == .calculator { calculatorEnabled = shown }
             if module == .alarms { alarmsEnabled = shown }
+            if module == .teleprompter { teleprompterEnabled = shown }
             var values = Set(hidden.split(separator: ",").map(String.init))
             if shown { values.remove(module.rawValue) } else { values.insert(module.rawValue) }
             hidden = values.sorted().joined(separator: ",")

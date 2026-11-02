@@ -118,7 +118,7 @@ extension AppFeature {
                 ? .mouse : .idle
         case .notchNotifications, .notchGestures, .notchTimer, .notchQueue, .notchDownloads: return .idle
         // It reads only while something is being watched, and stops on its own.
-        case .notchWatch, .notchCalculator, .notchAlarms: return .idle
+        case .notchWatch, .notchCalculator, .notchAlarms, .notchTeleprompter: return .idle
         // A blink every few seconds and a visit every few minutes, both
         // drawn by Core Animation, with one timer waiting for the next visit.
         case .notchMascot: return .periodic

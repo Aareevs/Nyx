@@ -237,6 +237,8 @@ final class NotchService: ObservableObject {
             || (expanded && MediaWorkspaceView.panelModalActive)
             || (expanded && selected == .downloads && NotchDownloadService.shared.isChoosingFolder)
             || (expanded && selected == .scratchpad && ScratchpadService.shared.modalInteractionActive)
+            // A script being read or written keeps the island where it is, so it does not close while someone records.
+            || (expanded && selected == .teleprompter && NotchTeleprompterService.shared.keepsIslandOpen)
             || (expanded && showingAppPanel && WallpaperService.shared.isChoosingSource)
             || (expanded && !showingSections && selected == .calendar && Permissions.shared.keepsCalendarPrompt)
             || (expanded && !showingSections && selected == .files && fileInteractionActive)
@@ -871,7 +873,8 @@ final class NotchService: ObservableObject {
                                      timerMode: NotchTimerService.shared.session.hasSession
                                         ? NotchTimerService.shared.session.mode : NotchTimerSupport.savedMode(),
                                      agentsHeight: module == .agents && !detail && !panel
-                                        ? agentsContentHeight(width: geometry.contentWidth) : nil)
+                                        ? agentsContentHeight(width: geometry.contentWidth) : nil,
+                                     teleprompterSize: NotchTeleprompterSize.current())
     }
 
     /// The AI page is as tall as the cards it shows; nil while the logs are
@@ -1113,7 +1116,7 @@ final class NotchService: ObservableObject {
         ScreenshotCapturePolicy.islandCaptureWindowIDs(
             islandWindowIDs: islandWindowIDs,
             mainWindowID: panel.flatMap { $0.windowNumber > 0 ? CGWindowID($0.windowNumber) : nil },
-            showsInCaptures: NotchSupport.showsInCaptures(),
+            showsInCaptures: sharesWithCaptures,
             showsCaptureTool: captureControls != nil || captureID.map(isCaptureVisible(id:)) == true)
     }
 
@@ -1147,6 +1150,7 @@ final class NotchService: ObservableObject {
         NotchWatchService.shared.syncWithPreferences()
         // Alarms ring whether or not the island is open, even with the lid closed.
         NotchAlarmService.shared.syncWithPreferences()
+        refreshCaptureSharing()
         // Requested file work can continue while locked, but disabling its
         // feature must still cancel it before presentation resumes.
         NotchFileToolsService.shared.syncWithPreferences()
@@ -2623,7 +2627,23 @@ final class NotchService: ObservableObject {
         presentedMusic = shown
     }
 
+    /// Whether the island's windows may show in recordings and screenshots now.
+    /// The teleprompter can keep them out while it is the page on screen.
+    private var sharesWithCaptures: Bool {
+        NotchTeleprompterSupport.sharesWithCaptures(page: selected, expanded: expanded)
+    }
+
+    /// Applies that to the island's window and its copies on other displays.
+    func refreshCaptureSharing() {
+        let sharing: NSWindow.SharingType = sharesWithCaptures ? .readOnly : .none
+        if let panel, panel.sharingType != sharing { panel.sharingType = sharing }
+        for mirror in mirrors.values where mirror.host.panel.sharingType != sharing {
+            mirror.host.panel.sharingType = sharing
+        }
+    }
+
     func refreshPresentation(animated: Bool = true, transitionContent: NotchContentTransition = .none) {
+        refreshCaptureSharing()
         // A notice with a new reading, or the music strip naming its song,
         // fits its new width in place.
         let fitsInPlace = noticeFitsInPlace && notice != nil && !noticeExpanded
@@ -3223,7 +3243,7 @@ final class NotchService: ObservableObject {
                 mirror.model.timerOutline = activity == .timer
                 mirror.host.setOutline(enabled: outline, color: activity == .timer ? .systemOrange : .white)
             }
-            let sharing: NSWindow.SharingType = NotchSupport.showsInCaptures() ? .readOnly : .none
+            let sharing: NSWindow.SharingType = sharesWithCaptures ? .readOnly : .none
             if mirror.host.panel.sharingType != sharing { mirror.host.panel.sharingType = sharing }
             let revealing = !mirror.model.shown
             let previous = mirror.model.activity
@@ -3594,7 +3614,7 @@ final class NotchService: ObservableObject {
                 },
                 update: { [weak self] in self?.updateFileDrop(at: $0) == true }))
         } else { windowHost?.setFileDropActions(nil) }
-        panel?.sharingType = NotchSupport.showsInCaptures() ? .readOnly : .none
+        refreshCaptureSharing()
         updateFullscreenVisibility(displayID: screen.notchDisplayID)
     }
 

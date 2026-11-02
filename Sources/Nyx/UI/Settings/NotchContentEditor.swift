@@ -177,6 +177,7 @@ struct NotchPagePreview: View {
         case .watch: NotchWatchView(size: size)
         case .calculator: NotchCalculatorView(size: size)
         case .alarms: NotchAlarmsView(size: size)
+        case .teleprompter: NotchTeleprompterView(size: size)
         }
     }
 
@@ -407,6 +408,7 @@ extension NotchModule {
         case .watch: return .purple
         case .calculator: return .orange
         case .alarms: return .pink
+        case .teleprompter: return .mint
         }
     }
 

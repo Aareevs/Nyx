@@ -4,7 +4,7 @@ import Foundation
 import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms
+    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms, teleprompter
     var id: String { rawValue }
 
     var symbol: String {
@@ -30,6 +30,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .watch: return "eye"
         case .calculator: return "plus.forwardslash.minus"
         case .alarms: return "alarm"
+        case .teleprompter: return "text.alignleft"
         }
     }
 
@@ -54,6 +55,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .watch: return "o"
         case .calculator: return "k"
         case .alarms: return "l"
+        case .teleprompter: return "e"
         }
     }
 
@@ -79,6 +81,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .watch: return AppFeature.notchWatch.isAvailable(in: defaults)
         case .calculator: return AppFeature.notchCalculator.isAvailable(in: defaults)
         case .alarms: return AppFeature.notchAlarms.isAvailable(in: defaults)
+        case .teleprompter: return AppFeature.notchTeleprompter.isAvailable(in: defaults)
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .connectedDevices].contains { (feature: AppFeature) in
@@ -1872,6 +1875,7 @@ enum NotchSupport {
                 && ($0 != .watch || defaults.bool(forKey: DefaultsKey.notchWatchEnabled))
                 && ($0 != .calculator || defaults.bool(forKey: DefaultsKey.notchCalculatorEnabled))
                 && ($0 != .alarms || defaults.bool(forKey: DefaultsKey.notchAlarmsEnabled))
+                && ($0 != .teleprompter || defaults.bool(forKey: DefaultsKey.notchTeleprompterEnabled))
         }
     }
 
@@ -2743,7 +2747,8 @@ struct NotchGeometry: Equatable {
                       fileMediaHeight: CGFloat? = nil, systemCards: Int = 6, toolCount: Int? = 8,
                       capturePreviewHeight: CGFloat? = nil,
                       timerHasSession: Bool = false, timerMode: NotchTimerMode = .timer,
-                      agentsHeight: CGFloat? = nil) -> CGSize {
+                      agentsHeight: CGFloat? = nil,
+                      teleprompterSize: NotchTeleprompterSize = .medium) -> CGSize {
         let budget = contentBudget
         let showsCapturePreview = module == .captures && !detail && capturePreviewHeight != nil
         let showsFileMedia = module == .files && !detail && fileMediaHeight != nil
@@ -2798,11 +2803,19 @@ struct NotchGeometry: Equatable {
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch, .calculator, .alarms:
                 contentHeight = budget
+            case .teleprompter:
+                // The page has its own size, chosen on the page itself.
+                contentHeight = budget * teleprompterSize.heightScale
             }
         }
         var preferredHeight = headerTopInset + headerChromeHeight + contentHeight
-        if layout == .custom { preferredHeight = min(preferredHeight, customHeight) }
-        return CGSize(width: expandedWidth,
+        let resizesTeleprompter = module == .teleprompter && !detail && !panel
+        if layout == .custom, !resizesTeleprompter { preferredHeight = min(preferredHeight, customHeight) }
+        var width = expandedWidth
+        if resizesTeleprompter {
+            width = min(width * teleprompterSize.widthScale, screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
+        }
+        return CGSize(width: width,
                       height: min(preferredHeight, screen.height - 48 - quickAccessBottomInset))
     }
 

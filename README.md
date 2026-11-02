@@ -54,6 +54,7 @@ Nyx started from the open-source [Vorssaint](https://github.com/vorssaint/vorssa
 - **Calculator in the island.** A new section with three modes: basic arithmetic (powers, roots, fractions), trigonometry (sin, cos, tan, csc, sec, cot and their inverses, in degrees or radians), and calculus (derivatives, integrals, complex numbers, factorials). Shortcut ⌥⌘K.
 - **Alarms in the island.** A new section for alarms that ring from the island: set a time with scroll wheels, add a label, and repeat on the days you pick, or ring once. A ringing alarm plays a sound and stays on the closed island with a **Stop** button until you stop it, and the Alarms page can snooze it for 5 minutes. Shortcut ⌥⌘L. Nyx has to be running for an alarm to ring.
 - **Add events to Calendar.** The island's Calendar page has a **+** button that opens a small form for a title, date and time, all day, and which calendar to save to. Events go into the Calendar app, so they sync as usual.
+- **Teleprompter in the island.** A new section for reading a script while you record or present. Type it in the built-in editor or paste it, set the speed in WPM, and follow the current line with the lines before and after it dimmed, a progress bar and the time left. Lines fill the width of the island, and a resize button on the page switches between the normal and a larger size. It can hide the island from screen recordings and screenshots (on by default; some screen-sharing apps may still show it). Shortcut ⌥⌘E.
 - **Edit clipboard text in Scratchpad.** Text entries in the island's Clipboard have a pen button that opens the text in Scratchpad.
 - **Menu bar folder.** Collapse the menu bar icons you rarely use into one folder, and click through to them without leaving the bar.
 - **Antigravity usage.** The AI agents section reads Antigravity's conversations and shows its token use, models and cost, with its own card and the Gemini mark. Also, in settings can turn off showing Antigravity as working.
@@ -193,7 +194,7 @@ Clipboard history · Auto clear clipboard · Paste as plain text · Shelf · Fin
 
 ### Everyday tools
 
-Dynamic Island · AI agents · Command Bar · Quick panel · Quick toggles · Quit apps · Radial menu · Scratchpad · Cleaning Mode
+Dynamic Island · AI agents · Command Bar · Quick panel · Quick toggles · Quit apps · Radial menu · Scratchpad · Teleprompter · Cleaning Mode
 
 <details>
 <summary><b>Details and screenshots</b></summary>
@@ -207,6 +208,7 @@ Dynamic Island · AI agents · Command Bar · Quick panel · Quick toggles · Qu
 - **Quit apps.** See every open app in one list and quit them one by one, all at once or all but the one in front.
 - **Radial menu.** Open a customizable wheel of apps, files, shortcuts and tools around the pointer, with profiles and submenus.
 - **Scratchpad.** Keep autosaved notes in tabs, with Markdown preview and export, in a floating window or Dynamic Island.
+- **Teleprompter.** Read a typed or pasted script line by line from the Dynamic Island at a speed you set, switch it to a larger size, and keep the island hidden from screen recordings.
 - **Cleaning Mode.** Lock keyboard input while cleaning, with a black screen or a small visible indicator.
 
 <p align="center">
