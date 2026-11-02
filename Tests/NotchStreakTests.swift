@@ -78,6 +78,23 @@ enum NotchStreakTests {
         suite.expect(support.leetcodeResult(from: Data("<html>".utf8)) == .failure(.unavailable), "streak: junk is unavailable, not not-found")
         suite.expect(support.leetcodeResult(from: Data("{\"data\":{}}".utf8)) == .failure(.unavailable), "streak: a reply with no user field is unavailable")
 
+        // Reddit, kept by hand
+        let redditName = "com.nyx.tests.streaks.reddit"
+        let redditDefaults = UserDefaults(suiteName: redditName)!
+        redditDefaults.removePersistentDomain(forName: redditName)
+        defer { redditDefaults.removePersistentDomain(forName: redditName) }
+        suite.expect(support.redditDays(in: redditDefaults).isEmpty, "streak: no Reddit day is marked until a person marks one")
+        support.markRedditDay(today - 1, in: redditDefaults)
+        support.markRedditDay(today, in: redditDefaults)
+        support.markRedditDay(today, in: redditDefaults)
+        let marked = support.redditDays(in: redditDefaults)
+        suite.expect(marked == [today - 1, today], "streak: a day marked twice is kept once")
+        suite.expect(support.snapshot(days: marked, now: at(11, 1)).streak == 2, "streak: marked Reddit days make a streak")
+        support.markRedditDay(today + 6000, in: redditDefaults)
+        suite.expect(support.redditDays(in: redditDefaults).count == 1, "streak: days far in the past are let go")
+        suite.expect(support.isValidUsername("spez", for: .reddit) && !support.isValidUsername("ab", for: .reddit)
+                     && !support.isValidUsername("a/b/c", for: .reddit), "streak: Reddit names are 3 to 20 safe characters")
+
         // Usernames, which end up in a URL
         suite.expect(support.isValidUsername("torvalds", for: .github) && support.isValidUsername("a-b", for: .github), "streak: ordinary GitHub names pass")
         suite.expect(!support.isValidUsername("a/b", for: .github) && !support.isValidUsername("-x", for: .github)

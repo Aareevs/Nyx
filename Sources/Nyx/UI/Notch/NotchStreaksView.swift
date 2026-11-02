@@ -14,6 +14,35 @@ enum NotchStreakLogo {
     }
 }
 
+extension NotchStreakProvider {
+    /// The colour of the service's mark: GitHub's grey, LeetCode's amber, Reddit's orange-red.
+    var rimColor: Color {
+        switch self {
+        case .github: return Color(red: 0.80, green: 0.83, blue: 0.88)
+        case .leetcode: return Color(red: 1.0, green: 0.63, blue: 0.09)
+        case .reddit: return Color(red: 1.0, green: 0.27, blue: 0.0)
+        }
+    }
+}
+
+/// The island's outline, pulsing in a colour while a streak is celebrated.
+struct NotchRimPulse: View {
+    let contour: Path
+    let color: Color
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var lit = false
+
+    var body: some View {
+        NotchBackdropShape(contour: contour)
+            .stroke(color.opacity(lit ? 1 : 0.35), lineWidth: 2.5)
+            .shadow(color: color.opacity(lit ? 0.95 : 0.15), radius: lit ? 11 : 2)
+            .onAppear {
+                guard !reduceMotion else { lit = true; return }
+                withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true)) { lit = true }
+            }
+    }
+}
+
 /// A flame that swells and glows, for a streak on the closed island.
 struct NotchStreakFlame: View {
     var size: CGFloat = 13
@@ -41,9 +70,16 @@ struct NotchStreaksView: View {
     @ObservedObject private var service = NotchStreakService.shared
     @AppStorage(DefaultsKey.notchStreakGitHub) private var github = ""
     @AppStorage(DefaultsKey.notchStreakLeetCode) private var leetcode = ""
+    @AppStorage(DefaultsKey.notchStreakReddit) private var reddit = ""
     private var text: NotchStreakStrings { FeatureStrings.notchStreaks(l10n.language) }
 
-    private func name(_ provider: NotchStreakProvider) -> String { provider == .github ? github : leetcode }
+    private func name(_ provider: NotchStreakProvider) -> String {
+        switch provider {
+        case .github: return github
+        case .leetcode: return leetcode
+        case .reddit: return reddit
+        }
+    }
     private var configured: [NotchStreakProvider] {
         NotchStreakProvider.allCases.filter {
             NotchStreakSupport.isValidUsername(name($0).trimmingCharacters(in: .whitespacesAndNewlines), for: $0)
@@ -82,10 +118,10 @@ struct NotchStreaksView: View {
 
     private var cards: some View {
         TimelineView(.everyMinute) { context in
-            HStack(alignment: .top, spacing: 10) {
+            HStack(spacing: 8) {
                 ForEach(configured) { provider in card(provider, now: context.date) }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -95,75 +131,94 @@ struct NotchStreaksView: View {
         let today = NotchStreakSupport.utcDay(now)
         // A count from before the UTC day turned says nothing about today yet.
         let current = snapshot.flatMap { $0.utcDay == today ? $0 : nil }
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                if let image = NotchStreakLogo.image(provider.logoResource) {
-                    Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: 18, height: 18).accessibilityHidden(true)
-                }
-                Text(provider.name).font(.system(size: 13, weight: .semibold))
-                Spacer(minLength: 4)
-                if let url = provider.profileURL(name(provider)), !preview {
-                    Button { NSWorkspace.shared.open(url) } label: {
-                        Image(systemName: "arrow.up.right.square").font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.55))
-                    }
-                    .buttonStyle(.plain).help(text.openProfile).accessibilityLabel(text.openProfile)
-                }
-            }
+        let tint: Color? = current.map { $0.doneToday ? .green : .orange }
+        return VStack(spacing: 6) {
+            header(provider)
+            Spacer(minLength: 0)
             if let snapshot {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    NotchStreakFlame(size: 20, animates: snapshot.streak > 0 && !preview)
-                    Text("\(snapshot.streak)").font(.system(size: 30, weight: .bold)).monospacedDigit()
-                    Text(snapshot.streak == 1 ? text.dayOne : text.dayMany)
-                        .font(.system(size: 13)).foregroundStyle(.white.opacity(0.65))
+                HStack(spacing: 5) {
+                    NotchStreakFlame(size: 17, animates: snapshot.streak > 0 && !preview)
+                    Text("\(snapshot.streak)")
+                        .font(.system(size: 32, weight: .bold, design: .rounded)).monospacedDigit()
+                        .lineLimit(1).minimumScaleFactor(0.6)
                 }
+                Text(snapshot.streak == 1 ? text.dayOne : text.dayMany)
+                    .font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.55))
+                    .padding(.top, -4)
                 if let current {
-                    status(done: current.doneToday)
+                    status(done: current.doneToday, manual: provider == .reddit)
                 } else {
-                    Text(text.loading).font(.system(size: 12)).foregroundStyle(.white.opacity(0.55))
+                    Text(text.loading).font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
                 }
-                Text("\(text.best) \(snapshot.longest)").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
             } else if service.loading.contains(provider) {
                 ProgressView().controlSize(.small)
-                Text(text.loading).font(.system(size: 12)).foregroundStyle(.white.opacity(0.55))
             } else if failure == .notFound {
-                Label(text.notFound, systemImage: "person.crop.circle.badge.questionmark")
-                    .font(.system(size: 12)).foregroundStyle(.orange)
+                message(text.notFound, symbol: "person.crop.circle.badge.questionmark")
             } else if failure != nil {
-                Label(text.unavailable, systemImage: "wifi.exclamationmark")
-                    .font(.system(size: 12)).foregroundStyle(.orange)
+                message(text.unavailable, symbol: "wifi.exclamationmark")
             } else {
-                Text(text.loading).font(.system(size: 12)).foregroundStyle(.white.opacity(0.55))
+                ProgressView().controlSize(.small)
             }
             Spacer(minLength: 0)
-            footer(provider, snapshot: snapshot, failure: failure, now: now)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    private func status(done: Bool) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: done ? "checkmark.circle.fill" : "circle.dashed")
-            Text(done ? text.doneToday : text.notDoneYet)
-        }
-        .font(.system(size: 12, weight: .semibold))
-        .foregroundStyle(done ? Color.green : Color.orange)
-    }
-
-    @ViewBuilder
-    private func footer(_ provider: NotchStreakProvider, snapshot: NotchStreakSnapshot?,
-                        failure: NotchStreakFailure?, now: Date) -> some View {
-        if let snapshot {
-            let minutes = NotchStreakSupport.ageMinutes(of: snapshot.fetched, now: now)
-            HStack(spacing: 4) {
-                if failure != nil { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
-                Text(minutes < 1 ? text.updatedNow : String(format: text.updatedFormat, minutes))
+            if let snapshot {
+                HStack(spacing: 3) {
+                    if failure != nil { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
+                    Text("\(text.best) \(snapshot.longest)")
+                }
+                .font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.4))
+                .help(updatedText(snapshot, now: now))
             }
-            .font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
         }
+        .padding(.horizontal, 10).padding(.vertical, 9)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder((tint ?? .white).opacity(tint == nil ? 0.08 : 0.35), lineWidth: 1))
+    }
+
+    @ViewBuilder private func header(_ provider: NotchStreakProvider) -> some View {
+        let label = HStack(spacing: 6) {
+            if let image = NotchStreakLogo.image(provider.logoResource) {
+                Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 16, height: 16).accessibilityHidden(true)
+            }
+            Text(provider.name).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+        }
+        if let url = provider.profileURL(name(provider)), !preview {
+            Button { NSWorkspace.shared.open(url) } label: { label.contentShape(Rectangle()) }
+                .buttonStyle(.plain).help(text.openProfile).accessibilityLabel("\(provider.name), \(text.openProfile)")
+        } else {
+            label
+        }
+    }
+
+    private func message(_ title: String, symbol: String) -> some View {
+        Label(title, systemImage: symbol)
+            .font(.system(size: 11, weight: .medium)).foregroundStyle(.orange)
+            .multilineTextAlignment(.center)
+    }
+
+    @ViewBuilder private func status(done: Bool, manual: Bool) -> some View {
+        let tint: Color = done ? .green : .orange
+        let pill = HStack(spacing: 4) {
+            Image(systemName: done ? "checkmark.circle.fill" : manual ? "hand.tap.fill" : "circle.dashed")
+            Text(done ? text.doneToday : manual ? text.markDone : text.notDoneYet).lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 9).padding(.vertical, 3)
+        .background(tint.opacity(0.16), in: Capsule())
+        if manual, !done, !preview {
+            Button { service.markRedditDone() } label: { pill.contentShape(Capsule()) }
+                .buttonStyle(.plain).help(text.markDone).accessibilityLabel(text.markDone)
+        } else {
+            pill
+        }
+    }
+
+    private func updatedText(_ snapshot: NotchStreakSnapshot, now: Date) -> String {
+        let minutes = NotchStreakSupport.ageMinutes(of: snapshot.fetched, now: now)
+        return minutes < 1 ? text.updatedNow : String(format: text.updatedFormat, minutes)
     }
 }
 
@@ -172,6 +227,7 @@ struct NotchStreakSettingsControls: View {
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.notchStreakGitHub) private var github = ""
     @AppStorage(DefaultsKey.notchStreakLeetCode) private var leetcode = ""
+    @AppStorage(DefaultsKey.notchStreakReddit) private var reddit = ""
     @AppStorage(DefaultsKey.notchStreakReminder) private var reminder = true
     @AppStorage(DefaultsKey.notchStreakReminderMinutes) private var minutes = NotchStreakSupport.defaultReminderMinutes
     @AppStorage(DefaultsKey.notchStreakSound) private var sound = true
@@ -191,6 +247,7 @@ struct NotchStreakSettingsControls: View {
         VStack(alignment: .leading, spacing: 10) {
             nameField(text.githubUsername, symbol: "chevron.left.forwardslash.chevron.right", value: $github)
             nameField(text.leetcodeUsername, symbol: "curlybraces", value: $leetcode)
+            nameField(text.redditUsername, symbol: "bubble.left.and.bubble.right", value: $reddit)
             Text(text.usernameHint).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Divider()
@@ -209,6 +266,7 @@ struct NotchStreakSettingsControls: View {
         }
         .onChange(of: github) { _, _ in NotchStreakService.shared.preferencesChanged() }
         .onChange(of: leetcode) { _, _ in NotchStreakService.shared.preferencesChanged() }
+        .onChange(of: reddit) { _, _ in NotchStreakService.shared.preferencesChanged() }
     }
 
     private func nameField(_ title: String, symbol: String, value: Binding<String>) -> some View {

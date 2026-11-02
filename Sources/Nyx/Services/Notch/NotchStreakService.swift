@@ -13,6 +13,8 @@ final class NotchStreakService: ObservableObject {
     @Published private(set) var loading: Set<NotchStreakProvider> = []
     /// Whether the reminder's notice is the one on the island.
     @Published private(set) var reminderActive = false
+    /// Whether the reminder on the island is about Reddit alone, where its button is Done.
+    private var reminderMarksReddit = false
 
     private var loop: Task<Void, Never>?
     private var drain: Task<Void, Never>?
@@ -104,7 +106,9 @@ final class NotchStreakService: ObservableObject {
         let name = NotchStreakSupport.username(provider, in: defaults)
         loading.insert(provider)
         lastAttempt[provider] = Date()
-        let result = await Self.fetch(provider, username: name)
+        let result: Result<NotchStreakSnapshot, NotchStreakFailure> = provider == .reddit
+            ? .success(NotchStreakSupport.snapshot(days: NotchStreakSupport.redditDays(in: defaults), now: Date()))
+            : await Self.fetch(provider, username: name)
         loading.remove(provider)
         // The name may have changed while the lookup was away.
         guard NotchStreakSupport.username(provider, in: defaults) == name else { return }
@@ -145,10 +149,19 @@ final class NotchStreakService: ObservableObject {
                     return .success(NotchStreakSupport.snapshot(days: found.days, serverStreak: found.serverStreak, now: Date()))
                 case .failure(let failure): return .failure(failure)
                 }
+            case .reddit:
+                return .failure(.unavailable)  // never looked up: kept by hand
             }
         } catch {
             return .failure(.unavailable)
         }
+    }
+
+    /// Reddit's streak cannot be read from outside the account, so a person
+    /// marks the day done themselves.
+    func markRedditDone() {
+        NotchStreakSupport.markRedditDay(NotchStreakSupport.utcDay(Date()), in: defaults)
+        Task { @MainActor [weak self] in await self?.refresh(.reddit) }
     }
 
     // MARK: Results and the closed island
@@ -190,7 +203,7 @@ final class NotchStreakService: ObservableObject {
             ? String(format: text.noticeFormat, snapshot.streak)
             : String(format: text.noticeOpenFormat, snapshot.streak, snapshot.streak == 1 ? text.dayOne : text.dayMany)
         let notice = NotchNotice(event: .timer, title: provider.name, detail: detail, symbol: "flame.fill",
-                                 logo: provider.logoResource, forced: true, duration: 4)
+                                 logo: provider.logoResource, accent: provider, forced: true, duration: 4)
         return NotchService.shared.show(notice)
     }
 
@@ -226,19 +239,27 @@ final class NotchStreakService: ObservableObject {
         // An alarm that is ringing keeps the island; the reminder comes back after it.
         guard NotchAlarmService.shared.ringing == nil else { return }
         let text = FeatureStrings.notchStreaks(L10n.shared.language)
+        let redditOnly = open == [.reddit]
         let notice = NotchNotice(
             event: .timer, title: NotchStreakSupport.atRiskTitle(open, format: text.atRiskFormat),
-            detail: text.stop, symbol: "flame.fill", persistent: true, streakReminder: true)
+            detail: redditOnly ? text.done : text.stop, symbol: "flame.fill", persistent: true, streakReminder: true)
         if !reminderActive || !NotchService.shared.showsStreakNotice {
             if NotchService.shared.show(notice) {
                 if !reminderActive { alert.start(enabled: NotchStreakSupport.isSoundEnabled(in: defaults)) }
                 reminderActive = true
+                reminderMarksReddit = redditOnly
             }
         }
     }
 
-    /// Stop: quiet for the rest of the day.
+    /// Done (Reddit alone is open) counts the day; Stop is quiet for the rest of the day.
     func dismissReminder() {
+        if reminderMarksReddit {
+            reminderMarksReddit = false
+            markRedditDone()
+            clearReminder()
+            return
+        }
         defaults.set(NotchStreakSupport.localDayKey(), forKey: DefaultsKey.notchStreakReminderDismissed)
         clearReminder()
     }

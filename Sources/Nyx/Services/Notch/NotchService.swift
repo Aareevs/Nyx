@@ -23,6 +23,8 @@ struct NotchNotice: Equatable {
     var streakReminder = false
     /// A logo from Resources/Images shown in place of the symbol, for a streak.
     var logo: String? = nil
+    /// A streak's service, whose colour the island's rim pulses in while the notice is up.
+    var accent: NotchStreakProvider? = nil
     /// Shown even when its event's notices are switched off, as a notice the
     /// feature itself raises.
     var forced = false

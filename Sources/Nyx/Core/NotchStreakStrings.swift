@@ -30,6 +30,9 @@ struct NotchStreakStrings {
     let stop: String
     let githubUsername: String
     let leetcodeUsername: String
+    let redditUsername: String
+    let markDone: String
+    let done: String
     let usernamePlaceholder: String
     let usernameHint: String
     let reminder: String
@@ -44,15 +47,15 @@ extension FeatureStrings {
         switch language {
         case .enUS: return NotchStreakStrings(
             title: "Streaks",
-            description: "Follow your GitHub and LeetCode streaks in the Dynamic Island, see at a glance whether today is done, and get a reminder only when a streak is still open. Needs your public usernames, and looks them up online.",
-            summary: "Your GitHub and LeetCode streaks, with a reminder only while one is open.",
+            description: "Follow your GitHub, LeetCode and Reddit streaks in the Dynamic Island, see at a glance whether today is done, and get a reminder only when a streak is still open. Needs your public usernames, and looks them up online.",
+            summary: "Your GitHub, LeetCode and Reddit streaks, with a reminder only while one is open.",
             dayOne: "day",
             dayMany: "days",
             doneToday: "Done today",
             notDoneYet: "Not done yet",
             notSetUp: "Add your username in Settings",
             setupTitle: "Set up your streaks",
-            setupHint: "Add your GitHub or LeetCode username in the island’s Streaks settings. Only the public username is used.",
+            setupHint: "Add your GitHub, LeetCode or Reddit username in the island’s Streaks settings. Only the public username is used.",
             openSettings: "Open settings",
             refresh: "Refresh",
             openProfile: "Open profile",
@@ -68,8 +71,11 @@ extension FeatureStrings {
             stop: "Stop",
             githubUsername: "GitHub",
             leetcodeUsername: "LeetCode",
+            redditUsername: "Reddit",
+            markDone: "Mark done",
+            done: "Done",
             usernamePlaceholder: "username",
-            usernameHint: "Only the public username is sent, to github.com and leetcode.com, and only while Streaks is on. Days count in UTC, and GitHub needs private contributions shown on your profile to count them.",
+            usernameHint: "Only the public username is sent, to github.com and leetcode.com, and only while Streaks is on. Days count in UTC. GitHub needs private contributions shown on your profile to count them, and Reddit keeps its streak private, so you mark each Reddit day done yourself and Nyx only counts them.",
             reminder: "Daily reminder",
             reminderHint: "At this time, rings like an alarm if a streak is still open, and stops once it is done. It stays quiet when a lookup fails.",
             reminderTime: "Reminder time",

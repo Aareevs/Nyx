@@ -55,7 +55,7 @@ Nyx started from the open-source [Vorssaint](https://github.com/vorssaint/vorssa
 - **Alarms in the island.** A new section for alarms that ring from the island: set a time with scroll wheels, add a label, and repeat on the days you pick, or ring once. A ringing alarm plays a sound and stays on the closed island with a **Stop** button until you stop it, and the Alarms page can snooze it for 5 minutes. Shortcut ⌥⌘L. Nyx has to be running for an alarm to ring.
 - **Add events to Calendar.** The island's Calendar page has a **+** button that opens a small form for a title, date and time, all day, and which calendar to save to. Events go into the Calendar app, so they sync as usual.
 - **Teleprompter in the island.** A new section for reading a script while you record or present. Type it in the built-in editor or paste it, set the speed in WPM, and follow the current line with the lines before and after it dimmed, a progress bar and the time left. Lines fill the width of the island, and a resize button on the page switches between the normal and a larger size. It can hide the island from screen recordings and screenshots (on by default; some screen-sharing apps may still show it). Shortcut ⌥⌘E.
-- **Streaks in the island.** Add your GitHub and LeetCode usernames and the island shows each streak with a flame, whether today is done, and your best run. The closed island greets a streak with its logo and an animated flame, and at a time you pick it rings like an alarm only if a streak is still open, then stops once you have done it. Off by default; it looks the usernames up online (see the privacy notes), counts days in UTC, and GitHub only counts private contributions if your profile shows them. Shortcut ⌥⌘J.
+- **Streaks in the island.** Add your GitHub, LeetCode and Reddit usernames and the island shows each streak with a flame, whether today is done, and your best run. The closed island greets a streak with its logo and an animated flame, and at a time you pick it rings like an alarm only if a streak is still open, then stops once you have done it. Off by default; it looks the usernames up online (see the privacy notes), counts days in UTC, GitHub only counts private contributions if your profile shows them, and Reddit's streak is private, so you tap Mark done and Nyx counts those days. Shortcut ⌥⌘J.
 - **A full color picker.** The Color picker now opens a panel instead of sampling the screen straight away: a gradient square and hue slider, an editable hex value, HEX, RGB and HSL rows with a copy button each, WCAG contrast against white and black, a list of recent colors, and a Pick from screen button.
 - **Edit clipboard text in Scratchpad.** Text entries in the island's Clipboard have a pen button that opens the text in Scratchpad.
 - **Menu bar folder.** Collapse the menu bar icons you rarely use into one folder, and click through to them without leaving the bar.
@@ -211,7 +211,7 @@ Dynamic Island · AI agents · Command Bar · Quick panel · Quick toggles · Qu
 - **Radial menu.** Open a customizable wheel of apps, files, shortcuts and tools around the pointer, with profiles and submenus.
 - **Scratchpad.** Keep autosaved notes in tabs, with Markdown preview and export, in a floating window or Dynamic Island.
 - **Teleprompter.** Read a typed or pasted script line by line from the Dynamic Island at a speed you set, switch it to a larger size, and keep the island hidden from screen recordings.
-- **Streaks.** Keep your GitHub and LeetCode streaks alive from the Dynamic Island: a card for each with a flame, "done today" or "not done yet", and your best run, a closed-island animation when you extend one, and a reminder that rings only while a streak is still open. Off by default, public usernames only.
+- **Streaks.** Keep your GitHub, LeetCode and Reddit streaks alive from the Dynamic Island: a card for each with a flame, "done today" or "not done yet", and your best run, a closed-island animation when you extend one, and a reminder that rings only while a streak is still open. Off by default, public usernames only.
 - **Cleaning Mode.** Lock keyboard input while cleaning, with a black screen or a small visible indicator.
 
 <p align="center">
@@ -362,7 +362,7 @@ See [troubleshooting](docs/TROUBLESHOOTING.md) for launch problems, permissions 
 
 Nyx is built on [Vorssaint](https://github.com/vorssaint/vorssaint-utils), an open-source macOS utility by [@vorssaint](https://x.com/vorssaint). The original idea, structure and a large part of the code come from that project, and it is where to look for the upstream version. Everything under "What's new in Nyx" above was added on top by [Aareevs](https://github.com/Aareevs).
 
-The GitHub and LeetCode logos in Streaks are trademarks of their owners and are used only to label those services.
+The GitHub, LeetCode and Reddit logos in Streaks are trademarks of their owners and are used only to label those services.
 
 ## License
 

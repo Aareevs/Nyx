@@ -842,6 +842,8 @@ enum DefaultsKey {
     static let notchStreaksEnabled = "notchStreaksEnabled"
     static let notchStreakGitHub = "notchStreakGitHub"       // public GitHub username
     static let notchStreakLeetCode = "notchStreakLeetCode"   // public LeetCode username
+    static let notchStreakReddit = "notchStreakReddit"       // public Reddit username
+    static let notchStreakRedditDays = "notchStreakRedditDays" // UTC days marked done by hand
     static let notchStreakReminder = "notchStreakReminder"
     static let notchStreakReminderMinutes = "notchStreakReminderMinutes" // minutes after midnight
     static let notchStreakSound = "notchStreakSound"

@@ -3,13 +3,23 @@ import Foundation
 /// The two services whose daily streaks the island keeps an eye on. Both
 /// publish a person's activity on a public page, so no login is needed.
 enum NotchStreakProvider: String, CaseIterable, Identifiable, Codable {
-    case github, leetcode
+    case github, leetcode, reddit
     var id: String { rawValue }
 
-    var name: String { self == .github ? "GitHub" : "LeetCode" }
+    var name: String {
+        switch self {
+        case .github: return "GitHub"
+        case .leetcode: return "LeetCode"
+        case .reddit: return "Reddit"
+        }
+    }
 
     var usernameKey: String {
-        self == .github ? DefaultsKey.notchStreakGitHub : DefaultsKey.notchStreakLeetCode
+        switch self {
+        case .github: return DefaultsKey.notchStreakGitHub
+        case .leetcode: return DefaultsKey.notchStreakLeetCode
+        case .reddit: return DefaultsKey.notchStreakReddit
+        }
     }
 
     /// The logo shipped in Resources/Images, used only to label the service.
@@ -21,6 +31,7 @@ enum NotchStreakProvider: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .github: return URL(string: "https://github.com/\(name)")
         case .leetcode: return URL(string: "https://leetcode.com/u/\(name)/")
+        case .reddit: return URL(string: "https://www.reddit.com/user/\(name)")
         }
     }
 }
@@ -89,6 +100,7 @@ enum NotchStreakSupport {
         switch provider {
         case .github: return name.range(of: #"^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$"#, options: .regularExpression) != nil
         case .leetcode: return name.range(of: #"^[A-Za-z0-9_.-]+$"#, options: .regularExpression) != nil
+        case .reddit: return name.range(of: #"^[A-Za-z0-9_-]{3,20}$"#, options: .regularExpression) != nil
         }
     }
 
@@ -158,6 +170,18 @@ enum NotchStreakSupport {
             }
         }
         return .success(NotchStreakCalendar(days: days, serverStreak: serverStreak))
+    }
+
+    /// Reddit's own streak is private to the account, so these are the days
+    /// marked done by hand, kept as UTC day numbers.
+    static func redditDays(in defaults: UserDefaults = .standard) -> Set<Int> {
+        Set((defaults.array(forKey: DefaultsKey.notchStreakRedditDays) as? [Int]) ?? [])
+    }
+
+    static func markRedditDay(_ day: Int, in defaults: UserDefaults = .standard) {
+        // Several years of days is plenty to count a streak from.
+        let kept = redditDays(in: defaults).union([day]).filter { $0 > day - 5000 }
+        defaults.set(kept.sorted(), forKey: DefaultsKey.notchStreakRedditDays)
     }
 
     // MARK: Streaks

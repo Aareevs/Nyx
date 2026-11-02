@@ -527,8 +527,11 @@ struct NotchWindowBackground: View {
     @AppStorage(DefaultsKey.notchLiquidGlassEnabled) private var glass = false
     @AppStorage(DefaultsKey.notchTranslucentBackground) private var translucent = false
 
+    @ObservedObject private var service = NotchService.shared
+
     var body: some View {
-        NotchSurfaceBackground(presentation: presentation, glass: glass, translucent: translucent)
+        NotchSurfaceBackground(presentation: presentation, glass: glass, translucent: translucent,
+                               rim: service.notice?.accent?.rimColor)
     }
 }
 
@@ -537,6 +540,8 @@ struct NotchSurfaceBackground: View {
     @ObservedObject var presentation: NotchBackdropPresentation
     let glass: Bool
     var translucent = false
+    /// A colour the island's outline pulses in, for a streak's celebration.
+    var rim: Color? = nil
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -577,6 +582,9 @@ struct NotchSurfaceBackground: View {
 #endif
             if showsTranslucent, presentation.restingBlack < 1 {
                 translucentOrBlack
+            }
+            if let rim, !presentation.contour.isEmpty {
+                NotchRimPulse(contour: presentation.contour, color: rim)
             }
         }
         .environment(\.colorScheme, .dark)
