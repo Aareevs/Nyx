@@ -35,7 +35,9 @@ final class NotchWeatherService: ObservableObject {
         Task {
             defer { loading = false }
             guard let place = await resolvePlace() else { return }
-            if let fresh = await Self.fetch(place) { reading = fresh }
+            var fresh = await Self.fetch(place)
+            if fresh == nil { fresh = await Self.fetchFallback(place) }
+            if let fresh { reading = fresh }
         }
     }
 
@@ -78,6 +80,41 @@ final class NotchWeatherService: ObservableObject {
               let code = (current["weather_code"] as? NSNumber)?.intValue else { return nil }
         let day = (current["is_day"] as? NSNumber)?.intValue != 0
         return Reading(emoji: emoji(code: code, day: day), temperature: Int(temperature.rounded()))
+    }
+
+    /// MET Norway's forecast, tried when the first service cannot answer.
+    private static func fetchFallback(_ place: (latitude: Double, longitude: Double)) async -> Reading? {
+        guard var parts = URLComponents(string: "https://api.met.no/weatherapi/locationforecast/2.0/compact") else { return nil }
+        parts.queryItems = [
+            URLQueryItem(name: "lat", value: String(format: "%.4f", locale: Locale(identifier: "en_US_POSIX"), place.latitude)),
+            URLQueryItem(name: "lon", value: String(format: "%.4f", locale: Locale(identifier: "en_US_POSIX"), place.longitude))]
+        guard let url = parts.url else { return nil }
+        var request = URLRequest(url: url, timeoutInterval: 15)
+        request.setValue("Nyx/1.0 (macOS notch utility)", forHTTPHeaderField: "User-Agent")
+        guard let data = try? await URLSession.shared.data(for: request).0,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let properties = json["properties"] as? [String: Any],
+              let first = (properties["timeseries"] as? [[String: Any]])?.first,
+              let entry = first["data"] as? [String: Any],
+              let details = (entry["instant"] as? [String: Any])?["details"] as? [String: Any],
+              let celsius = (details["air_temperature"] as? NSNumber)?.doubleValue else { return nil }
+        let symbol = (((entry["next_1_hours"] as? [String: Any])?["summary"]) as? [String: Any])?["symbol_code"] as? String ?? ""
+        let night = symbol.hasSuffix("_night")
+        let fahrenheit = Locale.current.measurementSystem == .us
+        let degrees = fahrenheit ? celsius * 9 / 5 + 32 : celsius
+        let emoji: String
+        switch symbol.split(separator: "_").first.map(String.init) ?? "" {
+        case "clearsky": emoji = night ? "🌙" : "☀️"
+        case "fair": emoji = night ? "🌙" : "🌤️"
+        case "partlycloudy": emoji = night ? "☁️" : "⛅"
+        case "cloudy": emoji = "☁️"
+        case "fog": emoji = "🌫️"
+        case let name where name.contains("thunder"): emoji = "⛈️"
+        case let name where name.contains("snow") || name.contains("sleet"): emoji = "🌨️"
+        case let name where name.contains("rain"): emoji = "🌧️"
+        default: emoji = "🌡️"
+        }
+        return Reading(emoji: emoji, temperature: Int(degrees.rounded()))
     }
 
     /// The emoji for a WMO weather code.

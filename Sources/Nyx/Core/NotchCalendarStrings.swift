@@ -23,6 +23,7 @@ struct NotchCalendarStrings {
     /// The month grid, offered from the week strip of a short island.
     let month: String
     let emptyDay: String
+    let emptyToday: String
     let hasEvents: String
     let countdown: String
     let countdownHint: String
@@ -77,6 +78,7 @@ extension FeatureStrings {
             nextWeek: "Next week",
             month: "Month",
             emptyDay: "No appointments on this day",
+            emptyToday: "Nothing for today",
             hasEvents: "Has appointments",
             countdown: "Event countdown",
             countdownHint: "Show every timed event in the closed island before it starts. To count down to only some, turn this off and right-click them on the island’s Calendar page. Titles may appear in screen captures.",

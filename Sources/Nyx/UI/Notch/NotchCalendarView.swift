@@ -219,7 +219,7 @@ struct NotchCalendarView: View {
                 if let selectedDay {
                     Text(selectedDay, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
                 } else {
-                    Text(text.week)
+                    Text(Date(), format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
                 }
             }
             .font(.system(size: 13, weight: .semibold))
@@ -241,9 +241,8 @@ struct NotchCalendarView: View {
     }
 
     private func groups(now: Date) -> [DayGroup] {
-        let days = selectedDay.map { [$0] } ?? (0..<7).compactMap {
-            Calendar.current.date(byAdding: .day, value: $0, to: Calendar.current.startOfDay(for: now))
-        }
+        // With no day picked the agenda is today alone; other days open from the strip or grid.
+        let days = selectedDay.map { [$0] } ?? [Calendar.current.startOfDay(for: now)]
         let events = selectedDay == nil ? NotchCalendarSupport.upcoming(calendar.events, now: now) : calendar.events
         return days.map { DayGroup(day: $0, events: NotchCalendarSupport.events(events, on: $0)) }
             .filter { !$0.events.isEmpty }
@@ -314,7 +313,7 @@ struct NotchCalendarView: View {
                 .foregroundStyle(.white.opacity(0.45))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {
-                Text(selectedDay == nil ? text.empty : text.emptyDay)
+                Text(selectedDay == nil ? text.emptyToday : text.emptyDay)
                     .font(.system(size: 12)).foregroundStyle(.white.opacity(0.65))
                     .fixedSize(horizontal: false, vertical: true)
                 // With no card to open it from and no room for it in the row.
