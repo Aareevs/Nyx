@@ -9,7 +9,20 @@ final class ColorSamplerService: ObservableObject {
     /// The system sampler must stay referenced while its loupe is up.
     private var activeSampler: NSColorSampler?
 
+    /// Set while the picker panel waits for a sampled color, so the result
+    /// lands in the panel instead of going straight to the clipboard.
+    var deliversToPanel = false
+
     private init() {}
+
+    private func deliver(_ color: NSColor) {
+        if deliversToPanel {
+            deliversToPanel = false
+            ColorPickerPanelService.shared.receive(color)
+        } else {
+            copy(color)
+        }
+    }
 
     func pick() {
         ScreenCaptureService.shared.capture(initial: .color)
@@ -22,14 +35,17 @@ final class ColorSamplerService: ObservableObject {
         sampler.show { [weak self] color in
             DispatchQueue.main.async {
                 self?.activeSampler = nil
-                guard let color else { return }
-                self?.copy(color)
+                guard let color else {
+                    self?.deliversToPanel = false
+                    return
+                }
+                self?.deliver(color)
             }
         }
     }
 
     func receiveUnifiedColor(_ color: NSColor) {
-        copy(color)
+        deliver(color)
     }
 
     /// The string the configured copy format would produce for this color,

@@ -140,6 +140,7 @@ struct MetricsTests {
             }),
             ("calculator", { CalculatorEngineTests.run(suite) }),
             ("alarms", { NotchAlarmTests.run(suite) }),
+            ("colorpicker", { ColorPickerMathTests.run(suite) }),
             ("teleprompter", { NotchTeleprompterTests.run(suite) }),
             ("feature-hub-layout", { FeatureHubLayoutTests.run(suite) }),
             ("display-restoration", {

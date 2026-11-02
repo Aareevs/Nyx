@@ -558,6 +558,8 @@ enum DefaultsKey {
     static let colorPickerShortcutEnabled = "colorPickerShortcutEnabled"
     static let colorPickerShortcut = "colorPickerShortcut"
     static let colorPickerFormat = "colorPickerFormat"       // hex | rgb | hsl | swiftui
+    static let colorPickerRecent = "colorPickerRecent"       // JSON of the recent picker colors, as hex
+    static let colorPickerLast = "colorPickerLast"           // the color the picker panel shows when it opens
     static let colorPickerBareHex = "colorPickerBareHex"     // copy HEX without the leading #
     static let screenOCRShortcutEnabled = "screenOCRShortcutEnabled"
     static let screenOCRShortcut = "screenOCRShortcut"

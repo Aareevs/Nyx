@@ -55,6 +55,7 @@ Nyx started from the open-source [Vorssaint](https://github.com/vorssaint/vorssa
 - **Alarms in the island.** A new section for alarms that ring from the island: set a time with scroll wheels, add a label, and repeat on the days you pick, or ring once. A ringing alarm plays a sound and stays on the closed island with a **Stop** button until you stop it, and the Alarms page can snooze it for 5 minutes. Shortcut ⌥⌘L. Nyx has to be running for an alarm to ring.
 - **Add events to Calendar.** The island's Calendar page has a **+** button that opens a small form for a title, date and time, all day, and which calendar to save to. Events go into the Calendar app, so they sync as usual.
 - **Teleprompter in the island.** A new section for reading a script while you record or present. Type it in the built-in editor or paste it, set the speed in WPM, and follow the current line with the lines before and after it dimmed, a progress bar and the time left. Lines fill the width of the island, and a resize button on the page switches between the normal and a larger size. It can hide the island from screen recordings and screenshots (on by default; some screen-sharing apps may still show it). Shortcut ⌥⌘E.
+- **A full color picker.** The Color picker now opens a panel instead of sampling the screen straight away: a gradient square and hue slider, an editable hex value, HEX, RGB and HSL rows with a copy button each, WCAG contrast against white and black, a list of recent colors, and a Pick from screen button.
 - **Edit clipboard text in Scratchpad.** Text entries in the island's Clipboard have a pen button that opens the text in Scratchpad.
 - **Menu bar folder.** Collapse the menu bar icons you rarely use into one folder, and click through to them without leaving the bar.
 - **Antigravity usage.** The AI agents section reads Antigravity's conversations and shows its token use, models and cost, with its own card and the Gemini mark. Also, in settings can turn off showing Antigravity as working.
@@ -256,7 +257,7 @@ Screen capture · Screenshot · Screen recording · Camera preview · Copy text 
 - **Screen recording.** Record with separate system-audio and microphone tracks.
 - **Camera preview.** Check your camera in a floating mirror or Dynamic Island before a call.
 - **Copy text from screen.** Recognize text offline from any screen area, or read a QR code.
-- **Color picker.** Copy a screen color as HEX, RGB, HSL or SwiftUI code.
+- **Color picker.** A full picker panel: drag a color on the gradient square and hue slider, type a hex value, see HEX, RGB and HSL with a copy button each, check its contrast against white and black, and reuse recent colors. Pick from screen loads any pixel into the panel.
 - **Media tools.** Compress and edit videos, batch-convert images, add watermarks, make GIFs and extract text, all locally.
 
 </details>

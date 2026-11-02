@@ -111,8 +111,17 @@ final class ScreenCaptureService: ObservableObject {
     /// Opens the same chooser from every feature surface. A feature-specific
     /// button merely picks the initial mode; the person can switch before
     /// selecting anything.
-    func capture(initial preferred: ScreenCaptureTool? = nil, fromShortcut: Bool = false) {
+    func capture(initial preferred: ScreenCaptureTool? = nil, fromShortcut: Bool = false,
+                 opensColorPanel: Bool = true) {
         let recorder = ScreenRecorderService.shared
+        // Color has its own panel: the shortcut and every "Color picker"
+        // button open it, and its "Pick from screen" button comes back here
+        // with the panel skipped to sample a pixel.
+        if preferred == .color, opensColorPanel, AppFeature.colorPicker.isAvailable,
+           !recorder.hasActiveCapture, selection == nil, countdown == nil {
+            ColorPickerPanelService.shared.toggle()
+            return
+        }
         if preferred == .recording, AppFeature.screenRecorder.isAvailable,
            recorder.stopOrCancelActiveCapture() {
             return
@@ -295,8 +304,9 @@ final class ScreenCaptureService: ObservableObject {
             }
             ColorSamplerService.shared.receiveUnifiedColor(color)
         case .cancelled:
-            break
+            ColorSamplerService.shared.deliversToPanel = false
         case .failed:
+            ColorSamplerService.shared.deliversToPanel = false
             showFailure(for: selected)
         }
     }
