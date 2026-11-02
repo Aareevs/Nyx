@@ -77,6 +77,8 @@ Selecting a Claude account changes only which existing Claude Code profile Nyx m
 
 10. **Nyx updates, only when you check or turn on the daily check.** Pressing Check for updates in General settings, or the optional automatic check that is off by default, asks `api.github.com` for the latest Nyx release. The request carries only the Nyx version in its user agent, and the answer is the release number and its page. Nothing is downloaded or installed; you choose whether to open the release page.
 
+11. **GitHub and LeetCode streaks, only with Streaks switched on and a username set.** The island's Streaks section asks `github.com` for your public contributions calendar and `leetcode.com` for your public submission calendar, once an hour while it is on, when its page opens and when you press refresh. The request carries only the public username you typed, and the Nyx version in its user agent; no login, cookie or token is used. Nothing is requested for a service with no username, or while Streaks is off. Only the username and the cached counts (streak length, best streak, done today and when it was read) are kept on your Mac, in Nyx's preferences. Days are counted in UTC, and GitHub shows private contributions only if your profile is set to include them.
+
 That is the entire list. There are no hidden beacons or background uploads.
 
 ## Changes to this document

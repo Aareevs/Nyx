@@ -20,7 +20,7 @@ struct NotchNoticeView: View {
         }
     }
     /// The words of a timer's notice share its orange too.
-    private var textTint: Color { notice.event == .timer ? .orange : .white }
+    private var textTint: Color { notice.event == .timer && notice.logo == nil ? .orange : .white }
     /// With the companion on, it stands in for the symbol, and reacts unless
     /// its reactions are off.
     private var companionReaction: NotchMascotReaction? {
@@ -87,6 +87,10 @@ struct NotchNoticeView: View {
                             .transition(.identity)
                             .opacity(hidesMascot ? 0 : 1)
                             .animation(nil, value: hidesMascot)
+                    } else if let logo = notice.logo, let image = NotchStreakLogo.image(logo) {
+                        Image(nsImage: image)
+                            .resizable().interpolation(.high).scaledToFit()
+                            .frame(width: 15, height: 15)
                     } else if notice.event == .agents, let agent = notice.agent, notice.symbol == agent.symbol {
                         NotchAgentMark(provider: agent, size: 13)
                     } else if notice.event == .track {
@@ -127,6 +131,16 @@ struct NotchNoticeView: View {
             NotchMeter(value: level, height: 5, tint: tint)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: level)
                 .transaction { $0.disablesAnimations = false }
+        } else if notice.logo != nil {
+            // A streak's words, with a flame that breathes beside them.
+            HStack(spacing: 5) {
+                NotchStreakFlame(animates: !reduceMotion)
+                Text(notice.detail)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         } else if notice.persistent {
             // The whole notice is the button; this says so.
             Text(notice.detail)
