@@ -34,6 +34,8 @@ struct NotchStrings {
     let charged: String
     let lowBattery: String
     let controls: String
+    let nothingToday: String
+    let calendarOff: String
     let system: String
     let disabled: String
     let files: String
@@ -138,7 +140,9 @@ extension NotchStrings {
         charging: "Charging",
         charged: "Fully charged",
         lowBattery: "Low battery",
-        controls: "Controls",
+        controls: "Home",
+        nothingToday: "Nothing for today",
+        calendarOff: "Calendar is off",
         system: "System",
         disabled: "Enable the corresponding feature to use it here.",
         files: "Files",
@@ -162,7 +166,7 @@ extension NotchStrings {
         idleClock: "Time & weather",
         coverMenus: "Show over the menus",
         coverMenusHint: "Keeps the timer, music and other compact activity on screen when the menu bar has no room, covering the menus beside the camera.",
-        controlShortcuts: "Controls and shortcuts",
+        controlShortcuts: "Shortcuts",
         activity: "Activity",
         playingMusic: "Show music while playing",
         custom: "Custom",

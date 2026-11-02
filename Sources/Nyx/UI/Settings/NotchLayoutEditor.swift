@@ -156,7 +156,7 @@ struct NotchLayoutEditor: View {
         return previewGeometry.expandedSize(module: .controls,
             shortcutCount: items.filter { !$0.isLevel && $0 != .music }.count,
             sliderCount: items.filter(\.isLevel).count,
-            controlsHaveMusic: items.contains(.music)).height
+            controlsHaveMusic: true).height
     }
 
     /// A narrow window shrinks the whole island rather than only its width.
@@ -270,7 +270,7 @@ struct NotchLayoutEditor: View {
         let inBand = NotchLayout.bandLevelCount(levels.count, band: band)
         let bandLevels = Array(levels.prefix(inBand))
         let belowLevels = Array(levels.dropFirst(inBand))
-        let controls = NotchLayout.controls(hasCards: items.contains(.music), levelRow: !belowLevels.isEmpty,
+        let controls = NotchLayout.controls(hasCards: true, levelRow: !belowLevels.isEmpty,
                                             shortcutCount: shortcuts.count, width: contentWidth, height: contentHeight)
         return Button(action: editContents) {
             Color.clear.contentShape(NotchShape.island(height: actualHeight, geometry: previewGeometry))
@@ -294,19 +294,19 @@ struct NotchLayoutEditor: View {
                     NotchBandLevels(band: band, levels: bandLevels, side: .trailing) { levelRow($0) }
                 }
                 VStack(spacing: NotchLayout.rowSpacing) {
-                    if items.isEmpty {
-                        NotchEmptyView(symbol: NotchModule.controls.symbol, message: text.empty)
-                    } else {
-                        if controls.levelRow > 0 { NotchLevelRow(levels: belowLevels) { levelRow($0) } }
-                        if controls.cardRow > 0 { musicCard(height: controls.cardRow) }
-                        if controls.shortcutRows > 0 {
-                            NotchRail(items: shortcuts, rows: controls.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
-                                      width: contentWidth, spacing: NotchLayout.shortcutSpacing,
-                                      leastSpacing: NotchLayout.shortcutLeastSpacing,
-                                      rowSpacing: controls.shortcutRowSpacing) { item in
-                                NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {}
-                            }
+                    if controls.levelRow > 0 { NotchLevelRow(levels: belowLevels) { levelRow($0) } }
+                    if controls.cardRow > 0 {
+                        NotchHomeRow(notch: .shared, height: controls.cardRow)
+                        .environment(\.notchSettingsPreview, true)
+                    }
+                    if controls.shortcutRows > 0 {
+                        NotchRail(items: shortcuts, rows: controls.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
+                                  width: contentWidth, spacing: NotchLayout.shortcutSpacing,
+                                  leastSpacing: NotchLayout.shortcutLeastSpacing,
+                                  rowSpacing: controls.shortcutRowSpacing) { item in
+                            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {}
                         }
+                        .environment(\.notchFlatTiles, true)
                     }
                 }
                 .frame(width: contentWidth, height: contentHeight, alignment: .top)
@@ -322,24 +322,6 @@ struct NotchLayoutEditor: View {
             .accessibilityHidden(true)
         }
         .frame(width: actualWidth, height: actualHeight)
-    }
-
-    private func musicCard(height: CGFloat) -> some View {
-        HStack(spacing: 12) {
-            NotchArtwork(image: nil, size: max(40, height - 24))
-            // Nothing plays here and no transport follows, so the hint keeps
-            // its line beside the cover, as on the island.
-            VStack(alignment: .leading, spacing: 2) {
-                Text(FeatureStrings.radialMenu(l10n.language).mediaNothingPlaying)
-                    .font(.system(size: 13, weight: .semibold)).lineLimit(1)
-                Text(text.musicHint).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, 12)
-        .frame(maxWidth: .infinity)
-        .frame(height: height)
-        .modifier(NotchControlSurface(cornerRadius: 18, interactive: false))
     }
 
     /// A top-row level: the glyph, a slim bar and the chooser's chevron, with

@@ -18,33 +18,33 @@ struct NotchControlsView: View {
         let bandLevels = Array(levels.prefix(inBand))
         let belowLevels = Array(levels.dropFirst(inBand))
         let shortcuts = items.filter { !$0.isLevel && $0 != .music }
-        let layout = NotchLayout.controls(hasCards: items.contains(.music), levelRow: !belowLevels.isEmpty,
+        let layout = NotchLayout.controls(hasCards: true, levelRow: !belowLevels.isEmpty,
                                           shortcutCount: shortcuts.count, width: size.width, height: size.height)
-        if items.isEmpty {
-            NotchEmptyView(symbol: "slider.horizontal.3", message: FeatureStrings.notch(l10n.language).empty)
-        } else {
-            VStack(spacing: NotchLayout.rowSpacing) {
-                if layout.levelRow > 0 {
-                    NotchLevelRow(levels: belowLevels) { level($0) }
+        VStack(spacing: NotchLayout.rowSpacing) {
+            if layout.levelRow > 0 {
+                NotchLevelRow(levels: belowLevels) { level($0) }
+            }
+            if layout.cardRow > 0 {
+                NotchHomeRow(notch: service, height: layout.cardRow)
+            }
+            if layout.shortcutRows > 0 {
+                NotchRail(items: shortcuts, rows: layout.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
+                          width: size.width, spacing: NotchLayout.shortcutSpacing,
+                          leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing) { item in
+                    shortcut(item)
                 }
-                if layout.cardRow > 0 {
-                    NotchMusicControlsView(notch: service, height: layout.cardRow).frame(height: layout.cardRow)
-                }
-                if layout.shortcutRows > 0 {
-                    NotchRail(items: shortcuts, rows: layout.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
-                              width: size.width, spacing: NotchLayout.shortcutSpacing,
-                              leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing) { item in
-                        shortcut(item)
-                    }
+                .environment(\.notchFlatTiles, true)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(.white.opacity(0.08)).frame(height: 1).offset(y: -NotchLayout.rowSpacing / 2 - 1)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .notchBand(leading: {
-                NotchBandLevels(band: band, levels: bandLevels, side: .leading) { level($0) }
-            }, trailing: {
-                NotchBandLevels(band: band, levels: bandLevels, side: .trailing) { level($0) }
-            })
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .notchBand(leading: {
+            NotchBandLevels(band: band, levels: bandLevels, side: .leading) { level($0) }
+        }, trailing: {
+            NotchBandLevels(band: band, levels: bandLevels, side: .trailing) { level($0) }
+        })
     }
 
     @ViewBuilder private func level(_ item: NotchControlItem) -> some View {
@@ -444,22 +444,23 @@ struct NotchActionTile: View {
     var accent: NotchTileAccent = .selection
     let action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.notchFlatTiles) private var flat
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: symbol).font(.system(size: 17, weight: .medium))
+            VStack(spacing: flat ? 3 : 6) {
+                Image(systemName: symbol).font(.system(size: flat ? 18 : 17, weight: .medium))
                     .foregroundStyle(active ? accent.glyph : .white.opacity(0.85))
                     .contentTransition(.symbolEffect(.replace))
-                    .frame(width: 40, height: 40)
-                    .background(active ? accent.fill : Color.white.opacity(0.075), in: Circle())
+                    .frame(width: flat ? 34 : 40, height: flat ? 30 : 40)
+                    .background(active ? accent.fill : (flat ? Color.clear : Color.white.opacity(0.075)), in: flat ? AnyShape(Capsule()) : AnyShape(Circle()))
                     .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
                 label
                     .frame(maxWidth: .infinity)
-                    .frame(height: 28, alignment: .top)
+                    .frame(height: flat ? 16 : 28, alignment: .top)
             }
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity)
-            .frame(height: NotchLayout.shortcutHeight)
+            .frame(height: flat ? NotchLayout.homeShortcutHeight : NotchLayout.shortcutHeight)
             .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: active)
             .contentShape(RoundedRectangle(cornerRadius: 14))
         }
@@ -490,10 +491,10 @@ struct NotchActionTile: View {
             .lineLimit(1)
             .minimumScaleFactor(0.85)
         } else {
-            Text(title).font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white)
-                .lineLimit(2).multilineTextAlignment(.center)
-                .minimumScaleFactor(0.85)
+            Text(title).font(.system(size: flat ? 10 : 11, weight: .medium))
+                .foregroundStyle(flat ? .white.opacity(0.5) : .white)
+                .lineLimit(flat ? 1 : 2).multilineTextAlignment(.center)
+                .minimumScaleFactor(flat ? 0.7 : 0.85)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

@@ -885,7 +885,7 @@ final class NotchService: ObservableObject {
         let shortcuts = controls.filter { !$0.isLevel && $0 != .music }.count
         return geometry.expandedSize(module: module, detail: detail, panel: panel, detailHeight: detailHeight,
                                      shortcutCount: shortcuts,
-                                     sliderCount: sliders, controlsHaveMusic: controls.contains(.music), musicHasContent: NotchMusicService.shared.playback != nil,
+                                     sliderCount: sliders, controlsHaveMusic: true, musicHasContent: NotchMusicService.shared.playback != nil,
                                      musicShowsVolume: musicShowsVolume,
                                      musicExtraHeight: musicExtraHeight, fileMediaHeight: fileMediaHeight,
                                      systemCards: NotchSupport.systemCardCount(hasBattery: PowerSampler.hasInternalBattery),

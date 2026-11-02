@@ -9,7 +9,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
-        case .controls: return "slider.horizontal.3"
+        case .controls: return "house.fill"
         // A speaker reads as sound at a glance; faders beside the settings
         // gear looked like a second settings button.
         case .mixer: return "speaker.wave.2"
@@ -283,9 +283,13 @@ enum NotchLayout {
     /// detail, a hosted utility) still get a readable page inside a preset.
     static let pageContentHeight: CGFloat = 320
     static let rowSpacing: CGFloat = 10
-    /// The home page's card row: the player's 56-point cover inside its padding.
-    static let cardHeight: CGFloat = 80
-    static let minimumCardHeight: CGFloat = 68
+    /// The Home page's panel row: the player and the day, side by side.
+    static let cardHeight: CGFloat = 104
+    static let minimumCardHeight: CGFloat = 76
+    /// A Home shortcut: a plain glyph over a one-line label.
+    static let homeShortcutHeight: CGFloat = 52
+    /// The width Home reads best at: the player and the day side by side.
+    static let homeContentWidth: CGFloat = 560
     /// A level in the island's top row at its narrowest: its glyph and a
     /// slider still long enough to set it.
     static let bandLevelMinimumWidth: CGFloat = 76
@@ -567,8 +571,7 @@ enum NotchLayout {
             let shortcuts = controls.filter { !$0.isLevel && $0 != .music }.count
             guard shortcuts <= railCapacity(width: width, itemWidth: shortcutWidth, spacing: shortcutSpacing) else { return nil }
             let rail = CGFloat(shortcuts) * (shortcutWidth + shortcutSpacing) - (shortcuts > 0 ? shortcutSpacing : 0)
-            let cards = controls.contains(.music) ? musicCardMinimumWidth(height: cardHeight) : 0
-            return max(rail, cards, musicContentWidth)
+            return max(rail, homeContentWidth)
         default: return nil
         }
     }
@@ -586,7 +589,9 @@ enum NotchLayout {
             let held = CGFloat(count) * bandLevelMinimumWidth + CGFloat(max(0, count - 1)) * bandLevelSpacing
             return held + bandLevelSpacing <= band.leadingRoom ? count : 0
         }
-        return count <= 2 && band.leadingRoom >= bandLevelMinimumWidth ? count : 0
+        // Beside a camera the levels always have a row of their own under it,
+        // so Home looks the same with one, two or three of them.
+        return 0
     }
 
     /// A level reading at the trailing end of the home page's full row,
@@ -622,19 +627,19 @@ enum NotchLayout {
             let remaining = hasCards ? budget - minimumCardHeight - rowSpacing : budget
             rows = railRows(count: shortcutCount,
                             perRow: railCapacity(width: width, itemWidth: shortcutWidth, spacing: shortcutSpacing),
-                            rowHeight: shortcutHeight, spacing: shortcutSpacing, height: remaining)
+                            rowHeight: homeShortcutHeight, spacing: shortcutSpacing, height: remaining)
             // A rail that would scroll sideways closes its rows as it closes
             // its columns, to take the row it is a few points short of; one
             // that fits keeps its rows and gaps.
             if railGap(columns: railColumns(count: shortcutCount, rows: rows), itemWidth: shortcutWidth,
                        spacing: shortcutSpacing, least: shortcutLeastSpacing, width: width) == nil,
-               let gap = railGap(columns: rows + 1, itemWidth: shortcutHeight, spacing: shortcutSpacing,
+               let gap = railGap(columns: rows + 1, itemWidth: homeShortcutHeight, spacing: shortcutSpacing,
                                  least: shortcutLeastRowSpacing, width: remaining) {
                 rows += 1
                 rowGap = gap
             }
         }
-        let rail = rows > 0 ? railHeight(rows: rows, rowHeight: shortcutHeight, spacing: rowGap) + rowSpacing : 0
+        let rail = rows > 0 ? railHeight(rows: rows, rowHeight: homeShortcutHeight, spacing: rowGap) + rowSpacing : 0
         let cardRow = hasCards ? min(cardHeight, max(minimumCardHeight, budget - rail)) : 0
         return NotchControlsLayout(levelRow: levels, cardRow: cardRow, shortcutRows: rows, shortcutRowSpacing: rowGap)
     }
@@ -711,7 +716,7 @@ struct NotchControlsLayout: Equatable {
 
     var height: CGFloat {
         let rail = shortcutRows > 0
-            ? NotchLayout.railHeight(rows: shortcutRows, rowHeight: NotchLayout.shortcutHeight, spacing: shortcutRowSpacing) : 0
+            ? NotchLayout.railHeight(rows: shortcutRows, rowHeight: NotchLayout.homeShortcutHeight, spacing: shortcutRowSpacing) : 0
         let rows = [levelRow, cardRow, rail].filter { $0 > 0 }
         return rows.reduce(0, +) + CGFloat(max(0, rows.count - 1)) * NotchLayout.rowSpacing
     }
@@ -2063,7 +2068,7 @@ enum NotchSupport {
             .split(separator: ",").compactMap { NotchControlItem(rawValue: String($0)) }
         var seen = Set<NotchControlItem>()
         return (stored + NotchControlItem.allCases).filter {
-            seen.insert($0).inserted && !hidden.contains($0.rawValue) && $0.isAvailable(in: defaults)
+            $0 != .music && seen.insert($0).inserted && !hidden.contains($0.rawValue) && $0.isAvailable(in: defaults)
         }
     }
 
