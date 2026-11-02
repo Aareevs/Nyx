@@ -109,6 +109,22 @@ struct NotchControlsView: View {
             NotchActionTile(symbol: item.symbol, title: item.title(l10n), action: service.openScratchpad)
         case .timer: NotchTimerTile(service: service)
         case .calendar: NotchCalendarTile(service: service)
+        case .colorPicker:
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {
+                service.perform { ColorPickerPanelService.shared.show() }
+            }
+        case .screenText:
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {
+                service.perform { ScreenTextService.shared.capture() }
+            }
+        case .cleaning:
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {
+                service.perform { CleaningModeManager.shared.activate() }
+            }
+        case .clipboard, .camera, .calculator, .alarms, .teleprompter, .streaks:
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {
+                if let module = item.module { service.select(module) }
+            }
         case .volume, .brightness, .keyboardLight, .music: EmptyView()
         }
     }
@@ -132,6 +148,15 @@ extension NotchControlItem {
         case .music: return NotchModule.music.title(l10n.language)
         case .timer: return NotchModule.timer.title(l10n.language)
         case .calendar: return NotchModule.calendar.title(l10n.language)
+        case .colorPicker: return l10n.s.colorPickerName
+        case .screenText: return l10n.s.ocrName
+        case .cleaning: return l10n.s.cleaningMenuItem
+        case .clipboard: return NotchModule.clipboard.title(l10n.language)
+        case .camera: return NotchModule.camera.title(l10n.language)
+        case .calculator: return NotchModule.calculator.title(l10n.language)
+        case .alarms: return NotchModule.alarms.title(l10n.language)
+        case .teleprompter: return NotchModule.teleprompter.title(l10n.language)
+        case .streaks: return NotchModule.streaks.title(l10n.language)
         }
     }
 }
