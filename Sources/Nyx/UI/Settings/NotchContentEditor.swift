@@ -296,8 +296,10 @@ struct NotchSectionListRow: View {
                         Text(title)
                             .font(.system(size: 12.5, weight: selected ? .semibold : .regular))
                             .foregroundStyle(available ? .primary : .secondary)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
+                            // One line, shrunk a little before it is cut, so a page's
+                            // name never breaks in the middle of a word.
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.9)
                         Spacer(minLength: 2)
                     }
                     .padding(.vertical, 5)

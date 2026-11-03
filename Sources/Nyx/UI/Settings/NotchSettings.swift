@@ -324,7 +324,7 @@ struct NotchSettings: View {
     /// options, so they keep the height of the window either way.
     private func contentEditor(in size: CGSize) -> some View {
         let wide = size.width >= 940
-        let listWidth: CGFloat = wide ? 216 : 196
+        let listWidth: CGFloat = wide ? 252 : 224
         let previewWidth = wide ? min(560, ((size.width - listWidth - 32) * 0.5).rounded()) : 0
         let detailWidth = max(0, size.width - listWidth - 16 - (wide ? previewWidth + 16 : 0))
         return HStack(alignment: .top, spacing: 16) {

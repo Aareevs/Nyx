@@ -136,7 +136,9 @@ func renderMenuBarIcon(scale: Int) -> Data? {
     // are bottom-up, so dropping it lowers y.
     let ink = menuBarGlyphHeight * CGFloat(scale)
     let y = (CGFloat(height) - ink) / 2 - menuBarGlyphDrop * CGFloat(scale)
-    drawMark(into: CGRect(x: 0, y: y, width: CGFloat(width), height: ink))
+    // A point in from each side, so the soft edge of the ring's tips stays
+    // inside the canvas instead of being cut by it (`--selftest` checks).
+    drawMark(into: CGRect(x: CGFloat(scale), y: y, width: CGFloat(width - 2 * scale), height: ink))
     NSGraphicsContext.restoreGraphicsState()
     return rep.representation(using: .png, properties: [:])
 }
