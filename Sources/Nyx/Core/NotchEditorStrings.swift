@@ -108,7 +108,7 @@ extension FeatureStrings {
         switch language {
         case .enUS: return NotchEditorStrings(
             layout: "Layout",
-            content: "Content",
+            content: "Pages",
             activity: "Activity",
             behavior: "Behavior",
             layoutHint: "Click + to add a button. Drag buttons around the island. Click a button to edit it.",
@@ -150,8 +150,8 @@ extension FeatureStrings {
             appPanelHint: "Choose where clicking the Nyx menu bar icon opens the app panel, on any display.",
             hideMenuBarIcon: "Hide the menu bar icon",
             hideMenuBarIconHint: "Settings and the app panel open from Dynamic Island. The icon returns when the island is off or hidden in full screen, or when an update is ready or the microphone is muted.",
-            sections: "Sections",
-            sectionsHint: "Drag to reorder. Uncheck a section to hide it from the island.",
+            sections: "Pages",
+            sectionsHint: "Drag to reorder. Switch a page off to hide it from the island.",
             preview: "Preview",
             hiddenInIsland: "Hidden from the island",
             openFeatures: "Open Features",

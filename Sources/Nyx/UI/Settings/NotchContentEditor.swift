@@ -290,11 +290,6 @@ struct NotchSectionListRow: View {
     var body: some View {
         PanelReorderableItem(item: module, order: $order, dragging: $dragging) {
             HStack(spacing: 8) {
-                // A section whose feature is off cannot show, whatever was chosen.
-                Toggle(title, isOn: available ? $included : .constant(false))
-                    .labelsHidden()
-                    .toggleStyle(.checkbox)
-                    .disabled(!available)
                 Button(action: select) {
                     HStack(spacing: 8) {
                         NotchSectionTile(module: module, shown: included && available, side: 22)
@@ -315,6 +310,13 @@ struct NotchSectionListRow: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
                 .accessibilityAction(named: FeatureStrings.clipboard(l10n.language).moveUp) { move(by: -1) }
                 .accessibilityAction(named: FeatureStrings.clipboard(l10n.language).moveDown) { move(by: 1) }
+                // A page whose feature is off cannot show, whatever was chosen.
+                Toggle(title, isOn: available ? $included : .constant(false))
+                    .labelsHidden()
+                    .toggleStyle(NyxSwitchToggleStyle())
+                    .scaleEffect(0.8)
+                    .frame(width: 36)
+                    .disabled(!available)
             }
             .padding(.horizontal, 8)
             .frame(minHeight: 32)

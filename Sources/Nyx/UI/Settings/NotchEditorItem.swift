@@ -10,6 +10,8 @@ struct NotchEditorItem: View {
     var unavailableAction: (() -> Void)? = nil
     /// Keeps a card as tall as a neighbour that explains why it is off.
     var reservesReason = false
+    /// A short tile: the reason a tile is off stays in its tooltip, not on the tile.
+    var compact = false
     let select: () -> Void
 
     var body: some View {
@@ -22,7 +24,7 @@ struct NotchEditorItem: View {
                         .foregroundStyle(included && available ? Color.accentColor : .secondary)
                     Text(title).font(.system(size: 11, weight: .medium)).lineLimit(2)
                         .multilineTextAlignment(.center).frame(height: 28)
-                    if unavailableReason != nil || reservesReason {
+                    if !compact, unavailableReason != nil || reservesReason {
                         // A fixed area leaves every card in a row the same height;
                         // the full reason is also in the tooltip.
                         Text(unavailableReason ?? " ").font(.caption2)
@@ -30,7 +32,7 @@ struct NotchEditorItem: View {
                             .multilineTextAlignment(.center).lineLimit(3, reservesSpace: true)
                             .accessibilityHidden(unavailableReason == nil)
                     }
-                }.frame(maxWidth: .infinity, minHeight: 76).padding(10)
+                }.frame(maxWidth: .infinity, minHeight: compact ? 0 : 76).frame(height: compact ? 56 : nil).padding(compact ? 8 : 10)
                     .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
                     .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1) }
             }.buttonStyle(.plain).disabled(!available && unavailableAction == nil)

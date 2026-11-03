@@ -60,6 +60,10 @@ struct NotchStrings {
     let coverMenus: String
     let coverMenusHint: String
     let controlShortcuts: String
+    let sliders: String
+    let controlShortcutsHint: String
+    let controlShortcutsLocked: String
+    let indicatorsLocked: String
     let activity: String
     let playingMusic: String
     let custom: String
@@ -167,6 +171,10 @@ extension NotchStrings {
         coverMenus: "Show over the menus",
         coverMenusHint: "Keeps the timer, music and other compact activity on screen when the menu bar has no room, covering the menus beside the camera.",
         controlShortcuts: "Shortcuts",
+        sliders: "Sliders",
+        controlShortcutsHint: "Tap to show or hide. Drag to reorder.",
+        controlShortcutsLocked: "Greyed-out shortcuts need a feature switched on. Tap one to open Features.",
+        indicatorsLocked: "Greyed-out indicators can’t be used yet. Hover one to see why, or tap one with an arrow to open Features.",
         activity: "Activity",
         playingMusic: "Show music while playing",
         custom: "Custom",

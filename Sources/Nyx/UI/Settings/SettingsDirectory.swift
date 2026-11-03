@@ -65,15 +65,6 @@ enum SettingsDirectory {
                                 .general, sectionAnchor: .panelConfiguration),
                             title: s.menuBarSection, icon: "menubar.rectangle"), at: 1)
                     }
-                    if pageItem.page == .shortcuts, isAvailable(.brightness),
-                       BrightnessService.keyboardLightIsSupported {
-                        let destination = FeatureSettingsDestination(
-                            .shortcuts, sectionAnchor: .keyboardBrightnessShortcuts)
-                        rows.append(SettingsSidebarItem(
-                            id: .setting(.keyboardBrightnessShortcuts), destination: destination,
-                            title: FeatureStrings.brightness(language).keyboardLight,
-                            icon: "keyboard"))
-                    }
                     return rows
                 }
                 guard !items.isEmpty else { return nil }
