@@ -728,6 +728,7 @@ struct NotchSettings: View {
 
     private var behaviorPage: some View {
         VStack(alignment: .leading, spacing: 20) {
+            NotchBrowserAccessCard()
             SettingsCard(title: editor.opening) {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     choice(editor.clickOpen, symbol: "cursorarrow", selected: !hover) { hideUntilHover = false; hover = false }

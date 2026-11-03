@@ -171,8 +171,7 @@ final class NotchMusicService: ObservableObject {
                 next = playback.withArtwork(cover)
             }
             if let playback = next,
-               let logo = (NotchSiteIcon.site(forTitle: playback.track.title, bundle: playback.track.appBundleIdentifier)
-                           ?? NotchSiteIcon.site(forFrontWindowOf: playback.track.appBundleIdentifier))?.imageData {
+               let logo = NotchSiteIcon.site(playing: playback.track.title, bundle: playback.track.appBundleIdentifier)?.imageData {
                 next = playback.withArtwork(logo)
             }
             if cachedArtwork != next?.track.artworkData {

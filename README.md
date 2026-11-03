@@ -361,7 +361,7 @@ See [troubleshooting](docs/TROUBLESHOOTING.md) for launch problems, permissions 
 
 Nyx is built on [Vorssaint](https://github.com/vorssaint/vorssaint-utils), an open-source macOS utility by [@vorssaint](https://x.com/vorssaint). The original idea, structure and a large part of the code come from that project, and it is where to look for the upstream version. Everything under "What's new in Nyx" above was added on top by [Aareevs](https://github.com/Aareevs).
 
-The GitHub, LeetCode and Reddit logos in Streaks, and the Spotify logo in Connectors, are trademarks of their owners and are used only to label those services.
+The GitHub, LeetCode and Reddit logos in Streaks, and the Spotify logo in Connectors, and the X, Reddit, Instagram, Netflix, Hotstar and LinkedIn marks shown for browser media, are trademarks of their owners and are used only to label those services.
 
 ## License
 
