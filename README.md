@@ -63,7 +63,6 @@ Nyx started from the open-source [Vorssaint](https://github.com/vorssaint/vorssa
 - **Claude limits fixed up.** Claude plan limits are read more reliably, and limit bars now default to showing how much you have used.
 - **Copy image** on Recent Captures and on the Shelf, so a screenshot goes straight to your clipboard.
 - **Downloads show their date.** Each finished download in the island lists when it was saved.
-- **Back buttons on the Tools page** in the island, and on the tools that open from the menu panel, so you are never stuck inside a tool.
 - **Check for updates.** **Settings → General → Updates** looks at the Nyx releases page and tells you when a newer version is out, with a Download button. Turn on the daily check if you want it to look on its own. It never installs anything by itself.
 - **Smoother, lighter app.** Fan Control, Kill Process, Port Manager, Disk Image Installer, Homebrew management, feedback and link sharing are gone, along with the extra languages (English only), so there is no privileged helper and far less code to trust. The source is about 20% smaller.
 
@@ -362,7 +361,7 @@ See [troubleshooting](docs/TROUBLESHOOTING.md) for launch problems, permissions 
 
 Nyx is built on [Vorssaint](https://github.com/vorssaint/vorssaint-utils), an open-source macOS utility by [@vorssaint](https://x.com/vorssaint). The original idea, structure and a large part of the code come from that project, and it is where to look for the upstream version. Everything under "What's new in Nyx" above was added on top by [Aareevs](https://github.com/Aareevs).
 
-The GitHub, LeetCode and Reddit logos in Streaks are trademarks of their owners and are used only to label those services.
+The GitHub, LeetCode and Reddit logos in Streaks, and the Spotify logo in Connectors, are trademarks of their owners and are used only to label those services.
 
 ## License
 
