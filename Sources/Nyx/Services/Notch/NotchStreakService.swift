@@ -96,7 +96,7 @@ final class NotchStreakService: ObservableObject {
         if let attempt = lastAttempt[provider], now.timeIntervalSince(attempt) < wait { return false }
         guard let snapshot = snapshots[provider] else { return true }
         return now.timeIntervalSince(snapshot.fetched) > interval
-            || snapshot.utcDay != NotchStreakSupport.utcDay(now)
+            || snapshot.utcDay != NotchStreakSupport.day(for: provider, now)
     }
 
     @MainActor private func refresh(_ provider: NotchStreakProvider) async {
@@ -107,7 +107,8 @@ final class NotchStreakService: ObservableObject {
         loading.insert(provider)
         lastAttempt[provider] = Date()
         let result: Result<NotchStreakSnapshot, NotchStreakFailure> = provider == .reddit
-            ? .success(NotchStreakSupport.snapshot(days: NotchStreakSupport.redditDays(in: defaults), now: Date()))
+            ? .success(NotchStreakSupport.snapshot(days: NotchStreakSupport.redditDays(in: defaults), now: Date(),
+                                         today: NotchStreakSupport.day(for: .reddit, Date())))
             : await Self.fetch(provider, username: name)
         loading.remove(provider)
         // The name may have changed while the lookup was away.
@@ -131,7 +132,8 @@ final class NotchStreakService: ObservableObject {
                 if status == 404 { return .failure(.notFound) }
                 guard status == 200, let html = String(data: data, encoding: .utf8),
                       let days = NotchStreakSupport.githubActiveDays(from: html) else { return .failure(.unavailable) }
-                return .success(NotchStreakSupport.snapshot(days: days, now: Date()))
+                return .success(NotchStreakSupport.snapshot(days: days, now: Date(),
+                                                                  today: NotchStreakSupport.day(for: .github, Date())))
             case .leetcode:
                 var request = URLRequest(url: URL(string: "https://leetcode.com/graphql")!, timeoutInterval: 20)
                 request.httpMethod = "POST"
@@ -146,7 +148,8 @@ final class NotchStreakService: ObservableObject {
                 guard (response as? HTTPURLResponse)?.statusCode == 200 else { return .failure(.unavailable) }
                 switch NotchStreakSupport.leetcodeResult(from: data) {
                 case .success(let found):
-                    return .success(NotchStreakSupport.snapshot(days: found.days, serverStreak: found.serverStreak, now: Date()))
+                    return .success(NotchStreakSupport.snapshot(days: found.days, serverStreak: found.serverStreak, now: Date(),
+                                                                  today: NotchStreakSupport.day(for: .leetcode, Date())))
                 case .failure(let failure): return .failure(failure)
                 }
             case .reddit:
@@ -160,7 +163,7 @@ final class NotchStreakService: ObservableObject {
     /// Reddit's streak cannot be read from outside the account, so a person
     /// marks the day done themselves.
     func markRedditDone() {
-        NotchStreakSupport.markRedditDay(NotchStreakSupport.utcDay(Date()), in: defaults)
+        NotchStreakSupport.markRedditDay(NotchStreakSupport.day(for: .reddit, Date()), in: defaults)
         Task { @MainActor [weak self] in await self?.refresh(.reddit) }
     }
 
@@ -175,6 +178,9 @@ final class NotchStreakService: ObservableObject {
         let extended = snapshot.doneToday && previous?.doneToday == false && previous?.utcDay == snapshot.utcDay
         if (extended || snapshot.celebratedDay != today), snapshot.streak > 0 {
             snapshot.celebratedDay = today
+            // The reminder holds the island; finishing the streak ends it so
+            // the celebration can take its place.
+            if extended { clearReminder() }
             celebrations.append((provider, snapshot))
             drainCelebrations()
         }
@@ -188,7 +194,15 @@ final class NotchStreakService: ObservableObject {
         drain = Task { @MainActor [weak self] in
             while let self, !Task.isCancelled, !self.celebrations.isEmpty {
                 let next = self.celebrations.removeFirst()
-                if self.celebrate(next.1, for: next.0) { try? await Task.sleep(for: .seconds(4.6)) }
+                // Another notice or an alarm can hold the island for a moment;
+                // ask again a few times so the celebration is not lost.
+                var shown = false
+                for _ in 0..<8 {
+                    if self.celebrate(next.1, for: next.0) { shown = true; break }
+                    try? await Task.sleep(for: .seconds(2))
+                    if Task.isCancelled { break }
+                }
+                if shown { try? await Task.sleep(for: .seconds(4.6)) }
             }
             self?.drain = nil
         }
@@ -211,8 +225,12 @@ final class NotchStreakService: ObservableObject {
 
     @MainActor private func tick() async {
         let now = Date()
-        for provider in NotchStreakSupport.configured(in: defaults) where isStale(provider, after: NotchStreakSupport.refreshInterval, now: now) {
-            await refresh(provider)
+        // A streak still open today is looked at again every couple of minutes,
+        // so finishing it shows on the island right away; a finished one rests.
+        for provider in NotchStreakSupport.configured(in: defaults) {
+            let open = snapshots[provider]?.doneToday != true
+            let interval = open ? NotchStreakSupport.reminderRetryInterval : NotchStreakSupport.refreshInterval
+            if isStale(provider, after: interval, now: now) { await refresh(provider) }
         }
         await evaluateReminder(now: now)
     }
@@ -230,10 +248,9 @@ final class NotchStreakService: ObservableObject {
             await refresh(provider)
         }
         // Only a streak read successfully today can be at risk; a failed lookup stays silent.
-        let today = NotchStreakSupport.utcDay(Date())
         let open = providers.filter {
             guard let snapshot = snapshots[$0] else { return false }
-            return snapshot.utcDay == today && !snapshot.doneToday
+            return snapshot.utcDay == NotchStreakSupport.day(for: $0, Date()) && !snapshot.doneToday
         }
         guard !open.isEmpty else { clearReminder(); return }
         // An alarm that is ringing keeps the island; the reminder comes back after it.

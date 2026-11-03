@@ -128,8 +128,8 @@ struct NotchStreaksView: View {
     private func card(_ provider: NotchStreakProvider, now: Date) -> some View {
         let snapshot = service.snapshots[provider]
         let failure = service.failures[provider]
-        let today = NotchStreakSupport.utcDay(now)
-        // A count from before the UTC day turned says nothing about today yet.
+        let today = NotchStreakSupport.day(for: provider, now)
+        // A count from before the day turned says nothing about today yet.
         let current = snapshot.flatMap { $0.utcDay == today ? $0 : nil }
         let tint: Color? = current.map { $0.doneToday ? .green : .orange }
         return VStack(spacing: 6) {
