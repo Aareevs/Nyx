@@ -53,6 +53,7 @@ struct SettingsView: View {
     @AppStorage(DefaultsKey.superKeySource) private var superKeySourceRaw =
         SuperKeySource.capsLock.rawValue
     @State private var searchQuery = ""
+    @State private var showHelp = false
     @State private var activeSearchIndex: Int?
     @State private var directoryCache = SettingsDirectoryCache()
     @State private var collapsedSectionIDs: Set<Int> = []
@@ -193,8 +194,21 @@ struct SettingsView: View {
                 .disabled(!router.canGoForward(isPageVisible: isPageVisible))
                 .help(strings.forward)
             }
+            ToolbarItem(placement: .primaryAction) {
+                let strings = SettingsNavigationStrings.localized(l10n.language)
+                Button { showHelp = true } label: {
+                    Text(strings.help)
+                }
+                .help(strings.help)
+            }
+            // Gap between Help and the window's right edge (macOS 26+).
+            // Edit this number to move Help left or right.
+            if #available(macOS 26, *) {
+                ToolbarSpacer(.fixed, placement: .primaryAction)
+            }
         }
         .frame(minWidth: 772, maxWidth: .infinity, minHeight: 528, maxHeight: .infinity)
+        .sheet(isPresented: $showHelp) { HelpView { showHelp = false } }
         .onAppear {
             ensureVisiblePage()
             expandSelectedSection()

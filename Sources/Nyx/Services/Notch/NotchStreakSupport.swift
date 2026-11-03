@@ -61,7 +61,7 @@ enum NotchStreakFailure: Error, Equatable {
 
 enum NotchStreakSupport {
     static let refreshInterval: TimeInterval = 3600
-    static let reminderRetryInterval: TimeInterval = 600
+    static let reminderRetryInterval: TimeInterval = 120
     static let defaultReminderMinutes = 20 * 60
 
     // MARK: Preferences
@@ -110,6 +110,15 @@ enum NotchStreakSupport {
 
     /// The UTC day, counted from 1970, that holds the moment.
     static func utcDay(_ date: Date) -> Int { Int((date.timeIntervalSince1970 / secondsPerDay).rounded(.down)) }
+
+    /// The day number a service counts as today. LeetCode counts in UTC;
+    /// GitHub and Reddit turn over at local midnight.
+    static func day(for provider: NotchStreakProvider, _ date: Date,
+                    timeZone: TimeZone = .current) -> Int {
+        if provider == .leetcode { return utcDay(date) }
+        let local = date.timeIntervalSince1970 + Double(timeZone.secondsFromGMT(for: date))
+        return Int((local / secondsPerDay).rounded(.down))
+    }
 
     /// "yyyy-MM-dd" as a UTC day number, without time zones getting involved.
     static func utcDay(fromISO text: String) -> Int? {
@@ -205,8 +214,9 @@ enum NotchStreakSupport {
         return best
     }
 
-    static func snapshot(days: Set<Int>, serverStreak: Int = 0, now: Date) -> NotchStreakSnapshot {
-        let today = utcDay(now)
+    static func snapshot(days: Set<Int>, serverStreak: Int = 0, now: Date,
+                         today: Int? = nil) -> NotchStreakSnapshot {
+        let today = today ?? utcDay(now)
         var count = streak(of: days, today: today)
         // A calendar only reaches back so far; when the run starts at its edge,
         // the service's own count may know of a longer one.

@@ -339,7 +339,9 @@ struct NotchSettings: View {
                         SettingsRouter.shared.request(FeatureSettingsDestination(.features), targetFeature: moduleFeature(module))
                     }
                     if !wide { preview(width: detailWidth, limit: 280) }
-                    if available, hasOptions(module) {
+                    if available, module == .controls {
+                        homeOptions
+                    } else if available, hasOptions(module) {
                         SettingsCard { moduleOptions(module) }
                     } else if available {
                         Text(editor.noOptions).font(.callout).foregroundStyle(.secondary)
@@ -395,6 +397,80 @@ struct NotchSettings: View {
         .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
+    /// Home's options: the sliders as switches, the shortcuts as chips that
+    /// drag into order, and the Keep awake activity.
+    @ViewBuilder private var homeOptions: some View {
+        SettingsCard(title: text.sliders) {
+            ForEach([NotchControlItem.volume, .brightness, .keyboardLight]) { item in levelRow(item) }
+        }
+        SettingsCard(title: text.controlShortcuts) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: 8)], alignment: .leading, spacing: 8) {
+                ForEach(orderedShortcuts) { item in
+                    PanelReorderableItem(item: item,
+                        order: Binding(get: { orderedShortcuts }, set: { controlOrder = $0.map(\.rawValue).joined(separator: ",") }),
+                        dragging: $draggingControl) {
+                        shortcutChip(item)
+                    }
+                }
+            }
+            Text(text.controlShortcutsHint).font(.caption).foregroundStyle(.secondary)
+            if orderedShortcuts.contains(where: { !$0.isAvailable() }) {
+                Text(text.controlShortcutsLocked).font(.caption).foregroundStyle(.secondary)
+            }
+            Divider()
+            let activities = FeatureStrings.notchActivities(l10n.language)
+            SettingsFeatureSwitchRow(symbol: NotchControlItem.keepAwake.symbol, title: activities.keepAwakeActivity,
+                                     caption: activities.keepAwakeActivityHint, isOn: $keepAwakeActivity, feature: .keepAwake)
+        }
+    }
+
+    /// A slider on the island's Home page: a switch, or the way to what it needs.
+    private func levelRow(_ item: NotchControlItem) -> some View {
+        let available = item.isAvailable()
+        let action = controlUnavailableAction(item)
+        return SettingsRow(symbol: item.symbol, title: item.title(l10n), caption: available ? nil : controlReason(item)) {
+            if available {
+                Toggle(item.title(l10n), isOn: controlBinding(item)).labelsHidden().toggleStyle(NyxSwitchToggleStyle())
+            } else if let action {
+                Button(action: action) { Image(systemName: "arrow.up.right.circle").font(.system(size: 16)) }
+                    .buttonStyle(.plain).foregroundStyle(Color.accentColor)
+                    .accessibilityLabel(controlReason(item))
+            }
+        }
+    }
+
+    /// A shortcut as a chip: marked while it shows on Home, greyed with the
+    /// way to what it needs when its feature is off.
+    private func shortcutChip(_ item: NotchControlItem) -> some View {
+        let available = item.isAvailable()
+        let action = controlUnavailableAction(item)
+        let binding = controlBinding(item)
+        let on = available && binding.wrappedValue
+        return Button {
+            if available { binding.wrappedValue.toggle() } else { action?() }
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: !available && action != nil ? "arrow.up.right.circle" : item.symbol)
+                    .font(.system(size: 12, weight: .medium)).frame(width: 16)
+                Text(item.title(l10n)).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10).frame(height: 32)
+            .foregroundStyle(on ? Color.accentColor : .secondary)
+            .background(on ? Color.accentColor.opacity(0.16) : Color.secondary.opacity(0.1),
+                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(on ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(!available && action == nil)
+        .help(available ? item.title(l10n) : controlReason(item))
+        .accessibilityLabel(item.title(l10n))
+        .accessibilityValue(available ? "" : controlReason(item))
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
     private func isShown(_ module: NotchModule) -> Bool {
         module.isAvailable() && moduleBinding(module).wrappedValue
     }
@@ -407,30 +483,7 @@ struct NotchSettings: View {
     @ViewBuilder private func moduleOptions(_ module: NotchModule) -> some View {
         switch module {
         case .controls:
-            let primary = [NotchControlItem.volume, .brightness, .keyboardLight]
-            HStack(spacing: 10) {
-                ForEach(primary) { item in
-                    toggleCard(item.title(l10n), symbol: item.symbol, value: controlBinding(item), available: item.isAvailable(),
-                               reason: controlReason(item), reservesReason: !primary.allSatisfy { $0.isAvailable() },
-                               unavailableAction: controlUnavailableAction(item))
-                }
-            }
-            Text(text.controlShortcuts).font(.subheadline.weight(.medium))
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 116), spacing: 8)], spacing: 8) {
-                ForEach(orderedShortcuts) { item in
-                    PanelReorderableItem(item: item,
-                        order: Binding(get: { orderedShortcuts }, set: { controlOrder = $0.map(\.rawValue).joined(separator: ",") }),
-                        dragging: $draggingControl) {
-                        toggleCard(item.title(l10n), symbol: item.symbol, value: controlBinding(item), available: item.isAvailable(),
-                                   reason: controlReason(item), reservesReason: !orderedShortcuts.allSatisfy { $0.isAvailable() },
-                                   unavailableAction: controlUnavailableAction(item))
-                    }
-                }
-            }
-            Divider()
-            let activities = FeatureStrings.notchActivities(l10n.language)
-            SettingsFeatureSwitchRow(symbol: NotchControlItem.keepAwake.symbol, title: activities.keepAwakeActivity,
-                                     caption: activities.keepAwakeActivityHint, isOn: $keepAwakeActivity, feature: .keepAwake)
+            EmptyView()
         case .music:
             let music = FeatureStrings.notchMusicExtras(l10n.language)
             switchRow("music.note", text.playingMusic, isOn: $showPlayingMusic)
@@ -661,6 +714,7 @@ struct NotchSettings: View {
                     toggleCard(text.inputSource, symbol: "keyboard", value: $inputSource,
                                available: true, reservesReason: reserves)
                 }
+                if reserves { Text(text.indicatorsLocked).font(.caption).foregroundStyle(.secondary) }
                 if accessoriesEnabled { Text(FeatureStrings.notchActivities(l10n.language).accessoryDescription).font(.caption).foregroundStyle(.secondary) }
                 if enabled, (volume || brightness || keyboardLight), !permissions.accessibility { PermissionRow(kind: .accessibility) }
             }
@@ -943,7 +997,7 @@ struct NotchSettings: View {
                             reservesReason: Bool = false, unavailableAction: (() -> Void)? = nil) -> some View {
         NotchEditorItem(symbol: symbol, title: title, included: value, available: available,
                         unavailableReason: available ? nil : reason ?? text.disabled,
-                        unavailableAction: unavailableAction, reservesReason: reservesReason) {
+                        unavailableAction: unavailableAction, reservesReason: reservesReason, compact: true) {
             value.wrappedValue.toggle()
         }
     }
