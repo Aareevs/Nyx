@@ -131,6 +131,10 @@ final class MenuBarFolderService: NSObject, ObservableObject {
         defaults.set(anchor + (swapped ? 80 : 40), forKey: Self.positionKey(Self.spacerName))
     }
 
+    /// Where Nyx's own icon sits, and a way to put it back right of the folder.
+    var placeMainItem: ((Double) -> Void)?
+    private var mainPlacementTried = false
+
     func start() {
         guard item == nil else { return }
         if UserDefaults.standard.object(forKey: Self.positionKey(Self.folderName)) == nil { seedPositions() }
@@ -158,6 +162,22 @@ final class MenuBarFolderService: NSObject, ObservableObject {
             if self.spacerIsRightOfFolder(), !self.orderRepairTried {
                 self.orderRepairTried = true
                 self.repairOrder()
+                return
+            }
+            // Nyx's own icon belongs on the folder's right. When macOS laid it
+            // out on the left, put it back there once, and do not collapse
+            // until it has settled.
+            // The items' own frames read zero here; the window list has them.
+            let mainName = StatusItemPlacementSupport.mainAutosaveName(in: .standard)
+            if !self.mainPlacementTried, let main = self.ownWindow(titled: mainName)?.bounds.minX,
+               let folder = self.ownWindow(titled: Self.folderName)?.bounds.minX, main < folder,
+               let place = self.placeMainItem {
+                self.mainPlacementTried = true
+                place(UserDefaults.standard.object(forKey: Self.positionKey(Self.folderName)) as? Double ?? 500)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                    guard let self, self.item != nil else { return }
+                    self.captureThenClose()
+                }
                 return
             }
             self.captureThenClose()

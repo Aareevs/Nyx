@@ -12,6 +12,9 @@ final class StatusItemController {
     var onClipboardPreviewClick: (() -> Void)?
 
     private(set) var statusItem: NSStatusItem!
+    /// Set while the icon is out of the bar being put in its saved spot, so nothing
+    /// touches the removed item and puts it back where it was.
+    private var replacingStatusItem = false
     /// The optional "show latest copy" item: same shape as a metric item —
     /// independent, opt-in and separately clickable — but not itself a
     /// MenuBarMetric, since its content comes from ClipboardHistoryService
@@ -76,7 +79,7 @@ final class StatusItemController {
         return formatter
     }()
 
-    var button: NSStatusBarButton? { statusItem.button }
+    var button: NSStatusBarButton? { statusItem?.button }
 
     func containsStatusItem(at screenPoint: NSPoint) -> Bool {
         let items = [statusItem, clipboardPreviewStatusItem].compactMap { $0 } + Array(metricStatusItems.values)
@@ -142,6 +145,26 @@ final class StatusItemController {
     /// macOS remembered for it so the rebuilt one is not put straight back out of
     /// sight — while keeping the spot the person arranged, which a brand new
     /// identity would throw away.
+    /// Rebuilds the icon with its saved spot set just right of `folderPosition`
+    /// (a larger number sits further left). AppKit writes the old spot back as
+    /// the item is removed, so the new one is stored after that.
+    func placeStatusItem(rightOf folderPosition: Double) {
+        if let statusItem { NSStatusBar.system.removeStatusItem(statusItem) }
+        statusItem = nil
+        replacingStatusItem = true
+        // AppKit settles the removed item's saved spot a moment later and
+        // would overwrite one written now, so the new spot waits for it.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            guard let self else { return }
+            let key = StatusItemPlacementSupport.preferredPositionKey(
+                for: StatusItemPlacementSupport.mainAutosaveName(in: .standard))
+            UserDefaults.standard.set(max(folderPosition - 80, 1), forKey: key)
+            StatusItemPlacementSupport.clearRememberedVisibility(in: .standard)
+            self.replacingStatusItem = false
+            self.installStatusItem()
+        }
+    }
+
     func recreateStatusItem() {
         // The item goes away first: AppKit writes its placement and remembered
         // visibility back under its own name as it is removed, which would put
@@ -378,7 +401,7 @@ final class StatusItemController {
                         String(keepAwakeActive), KeepAwakeIconTint.current.rawValue,
                         KeepAwakeActiveIcon.current.rawValue, BlackHoleGlyph.chosenSymbolName,
                         String(micBadgeActive)].joined(separator: "|")
-        guard stateKey != lastIconStateKey else { return }
+        guard !replacingStatusItem, stateKey != lastIconStateKey else { return }
         lastIconStateKey = stateKey
 
         statusItem.isVisible = !mainItemHidden
@@ -399,7 +422,7 @@ final class StatusItemController {
 
     @objc private func clicked() {
         if NSApp.currentEvent?.type == .rightMouseUp {
-            onRightClick?(statusItem.button)
+            onRightClick?(statusItem?.button)
         } else {
             onLeftClick?()
         }
@@ -483,7 +506,7 @@ final class StatusItemController {
         // status window even when the value is identical — and this runs on
         // every monitor tick and defaults change. Rounded metric strings
         // repeat most ticks, so skipping no-op writes skips that churn.
-        if statusItem.length != NSStatusItem.variableLength {
+        if !replacingStatusItem, statusItem.length != NSStatusItem.variableLength {
             statusItem.length = NSStatusItem.variableLength
         }
 

@@ -140,6 +140,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
 
         setUpPopover()
         bindManagers()
+        MenuBarFolderService.shared.placeMainItem = { [weak self] folderPosition in
+            self?.statusController.placeStatusItem(rightOf: folderPosition)
+        }
         MenuBarFolderService.shared.startIfEnabled()
 
         // A marker from an earlier build may name a hotkey id this build no
