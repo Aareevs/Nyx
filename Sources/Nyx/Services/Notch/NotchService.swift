@@ -4508,7 +4508,7 @@ final class NotchService: ObservableObject {
             appPanel: showingAppPanel, captureControls: captureControls != nil) {
             CameraPreviewService.shared.hideEmbedded()
         }
-        let musicWanted = modules.contains(.music) && ((expanded && (selected == .music || (selected == .controls && NotchSupport.controls().contains(.music)))
+        let musicWanted = modules.contains(.music) && ((expanded && (selected == .music || selected == .controls)
             && !showingAppPanel && !showingSections && !showingCommandBar)
             || ((!hiddenUntilHover || NotchSupport.hiddenShowsActivity())
                 && (NotchSupport.watchesMusicActivity() || NotchSupport.routes(.track))))

@@ -367,7 +367,9 @@ enum NotchMusicVisibilityTests {
         defaults.set(NotchIdleContent.none.rawValue, forKey: DefaultsKey.notchIdleContent)
         service.selected = .music
         service.expanded = true
-        for surface in ["sections", "appPanel", "unrelated", "hiddenModule", "hiddenControl"] {
+        // The home page always shows the player, so hiding a control no longer
+        // makes it an invisible consumer; it keeps the reader on.
+        for surface in ["sections", "appPanel", "unrelated", "hiddenModule"] {
             service.showingSections = surface == "sections"
             service.showingAppPanel = surface == "appPanel"
             service.selected = surface == "unrelated" ? .files : surface == "hiddenControl" ? .controls : .music

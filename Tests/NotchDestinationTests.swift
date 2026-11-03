@@ -189,8 +189,8 @@ enum NotchDestinationContract {
                    "hiding automatic music preserves explicit opening of its controls")
             service.open(.controls)
             suite.expect(service.expanded && service.selected == .controls
-                   && NotchSupport.controls(in: defaults).contains(.music),
-                   "hiding automatic music preserves playback controls on the island's home page")
+                   && !NotchSupport.controls(in: defaults).contains(.music),
+                   "hiding automatic music keeps the home page open, where playback always has its own card")
         }
         defaults.set(NotchIdleContent.music.rawValue, forKey: DefaultsKey.notchIdleContent)
         defaults.set(true, forKey: DefaultsKey.notchShowPlayingMusic)

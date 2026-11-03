@@ -23,7 +23,7 @@ struct HelpView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .frame(width: 780, height: 520)
+        .frame(width: 720, height: 480)
     }
 
     private var header: some View {
