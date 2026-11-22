@@ -37,6 +37,7 @@ You can review or change every grant in System Settings, under Privacy and Secur
 - **Paste as plain text**, which presses ⌘V for you after stripping the formatting.
 - **Finder cut and paste**, which steps in on ⌘X and ⌘V while Finder is in front.
 - **Quit on close**, which spots when an app's last window goes away.
+- **Chat**, optionally: when you open it with its shortcut, it reads the text selected in the app in front, if Accessibility is already allowed for another feature. Chat never asks for this permission itself and works fully without it.
 - **Radial menu**, for wheel actions that press a key combo or a media key
   for you and for the optional side button trigger; opening apps, files and
   links with the keyboard shortcut alone needs nothing.
