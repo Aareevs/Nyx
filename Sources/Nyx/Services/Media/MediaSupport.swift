@@ -348,6 +348,20 @@ struct MediaImageProfile: Codable, Identifiable, Equatable {
     }
 }
 
+/// The file a converted video is saved as. The extension is what picks the
+/// container, for both encoders.
+enum MediaVideoFormat: String, CaseIterable, Identifiable {
+    case mp4, mov
+
+    var id: String { rawValue }
+    var fileExtension: String { rawValue }
+    var title: String { rawValue.uppercased() }
+
+    static func sanitized(_ value: String) -> MediaVideoFormat {
+        MediaVideoFormat(rawValue: value) ?? .mp4
+    }
+}
+
 enum MediaVideoCodec: String, CaseIterable, Identifiable {
     case h264, hevc
 

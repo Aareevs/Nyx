@@ -73,7 +73,8 @@ enum MediaVideoTargetEncoder {
                                 progress: (Double) -> Void) throws {
         try? FileManager.default.removeItem(at: destination)
         guard let reader = try? AVAssetReader(asset: source.asset),
-              let writer = try? AVAssetWriter(outputURL: destination, fileType: .mp4)
+              let writer = try? AVAssetWriter(outputURL: destination,
+                                           fileType: destination.pathExtension.lowercased() == "mov" ? .mov : .mp4)
         else { throw EncodeError.unsupported }
 
         let start = CMTime(seconds: trim.start, preferredTimescale: 600)

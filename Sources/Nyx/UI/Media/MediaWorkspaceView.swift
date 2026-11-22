@@ -58,6 +58,7 @@ struct MediaWorkspaceView: View {
     @AppStorage(DefaultsKey.mediaVideoEnd) private var videoEnd = 0.0
     @AppStorage(DefaultsKey.mediaVideoQuality) private var videoQuality = 0.68
     @AppStorage(DefaultsKey.mediaVideoMaxDimension) private var videoMaxDimension = 1280
+    @AppStorage(DefaultsKey.mediaVideoFormat) private var videoFormatRaw = MediaVideoFormat.mp4.rawValue
     @AppStorage(DefaultsKey.mediaVideoSizing) private var videoSizingRaw = MediaSizingMode.resolution.rawValue
     @AppStorage(DefaultsKey.mediaVideoTargetMegabytes) private var videoTargetMegabytes = 20
 
@@ -221,6 +222,15 @@ struct MediaWorkspaceView: View {
                 return
             }
             outputURL = defaultOutputURL(for: inputURLs, tool: .imageCompressor)
+        }
+        .onChange(of: videoFormatRaw) { _, raw in
+            guard selectedTool == .videoCompressor else { return }
+            let format = MediaVideoFormat.sanitized(raw)
+            if outputWasChosenManually, let outputURL {
+                self.outputURL = MediaSupport.outputURLByReplacingExtension(outputURL, fileExtension: format.fileExtension)
+            } else {
+                outputURL = defaultOutputURL(for: inputURLs, tool: .videoCompressor)
+            }
         }
         .onDisappear {
             mediaDefaultsTask?.cancel()
@@ -410,6 +420,10 @@ struct MediaWorkspaceView: View {
         switch selectedTool {
         case .videoCompressor:
             VStack(alignment: .leading, spacing: 10) {
+                Picker(l10n.s.mediaFormat, selection: $videoFormatRaw) {
+                    ForEach(MediaVideoFormat.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
                 timeRangeRow(start: $videoStart, end: $videoEnd)
                 sizingPicker(selection: $videoSizingRaw)
                 if videoSizing == .resolution {
@@ -1622,7 +1636,8 @@ struct MediaWorkspaceView: View {
         guard let inputURL = inputURLs.first else { return nil }
         switch tool {
         case .videoCompressor:
-            return MediaSupport.uniqueOutputURL(for: inputURL, suffix: "-compressed", fileExtension: "mp4")
+            return MediaSupport.uniqueOutputURL(for: inputURL, suffix: "-compressed",
+                                               fileExtension: MediaVideoFormat.sanitized(videoFormatRaw).fileExtension)
         case .gifMaker:
             return MediaSupport.uniqueOutputURL(for: inputURL, suffix: "", fileExtension: "gif")
         case .imageCompressor:

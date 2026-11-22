@@ -490,6 +490,7 @@ enum DefaultsKey {
     static let mediaVideoKeepAudio = "mediaVideoKeepAudio"
     static let mediaVideoCodec = "mediaVideoCodec"
     static let mediaVideoSizing = "mediaVideoSizing"
+    static let mediaVideoFormat = "mediaVideoFormat"
     static let mediaVideoTargetMegabytes = "mediaVideoTargetMegabytes"
     static let mediaGIFStart = "mediaGIFStart"
     static let mediaGIFEnd = "mediaGIFEnd"
@@ -1706,6 +1707,7 @@ enum Defaults {
         DefaultsKey.mediaVideoKeepAudio: true,
         DefaultsKey.mediaVideoCodec: MediaVideoCodec.h264.rawValue,
         DefaultsKey.mediaVideoSizing: MediaSizingMode.resolution.rawValue,
+        DefaultsKey.mediaVideoFormat: MediaVideoFormat.mp4.rawValue,
         DefaultsKey.mediaVideoTargetMegabytes: 20,
         DefaultsKey.mediaGIFStart: 0.0,
         DefaultsKey.mediaGIFEnd: 0.0,
