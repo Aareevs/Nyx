@@ -101,7 +101,7 @@ enum HelpLibrary {
         ])],
         .notchStreaks: [.init(heading: "How each streak works", body: [
             "**GitHub and LeetCode:** enter your username once. Nyx reads your public activity and shows the current streak.",
-            "**Reddit:** Reddit can't be read automatically, so you mark the day done yourself with **Done**.",
+            "**Reddit:** reddit.com doesn't allow apps to read your streak, so Nyx can't see it. You mark each day done yourself with **Mark done**, and Nyx counts the days you mark.",
             "The island's border pulses in the service's colour when a streak goes up.",
         ])],
         .notch: [.init(heading: "Home", body: [

@@ -178,7 +178,8 @@ extension FeatureStrings {
             calculatorSummary: "Arithmetic, trigonometry and calculus, with complex numbers.",
             alarmsSummary: "Alarms that ring from the island, once or on chosen days.",
             teleprompterSummary: "A scrolling script to read from, with speed control.",
-            streaksSummary: "Your GitHub, LeetCode and Reddit streaks, with a reminder only while one is open."
+            streaksSummary: "Your GitHub, LeetCode and Reddit streaks, with a reminder only while one is open.",
+            chatSummary: "Chat with Claude, OpenAI, Gemini or NVIDIA using your own API key."
         )
         }
     }

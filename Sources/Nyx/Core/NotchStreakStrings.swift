@@ -32,6 +32,8 @@ struct NotchStreakStrings {
     let leetcodeUsername: String
     let redditUsername: String
     let markDone: String
+    /// Why the Reddit streak is marked by hand.
+    let redditManualNote: String
     let done: String
     let usernamePlaceholder: String
     let usernameHint: String
@@ -73,9 +75,10 @@ extension FeatureStrings {
             leetcodeUsername: "LeetCode",
             redditUsername: "Reddit",
             markDone: "Mark done",
+            redditManualNote: "reddit.com doesn’t allow apps to read your streak, so you mark each Reddit day done yourself.",
             done: "Done",
             usernamePlaceholder: "username",
-            usernameHint: "Only the public username is sent, to github.com and leetcode.com, and only while Streaks is on. Days count in UTC. GitHub needs private contributions shown on your profile to count them, and Reddit keeps its streak private, so you mark each Reddit day done yourself and Nyx only counts them.",
+            usernameHint: "Only the public username is sent, to github.com and leetcode.com, and only while Streaks is on. Days count in UTC. GitHub needs private contributions shown on your profile to count them, and reddit.com does not allow Nyx to read a Reddit streak, so you mark each Reddit day done yourself and Nyx only counts the days you mark.",
             reminder: "Daily reminder",
             reminderHint: "At this time, rings like an alarm if a streak is still open, and stops once it is done. It stays quiet when a lookup fails.",
             reminderTime: "Reminder time",

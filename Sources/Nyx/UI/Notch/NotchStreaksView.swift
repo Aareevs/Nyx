@@ -147,6 +147,13 @@ struct NotchStreaksView: View {
                     .padding(.top, -4)
                 if let current {
                     status(done: current.doneToday, manual: provider == .reddit)
+                    if provider == .reddit {
+                        // Reddit can't be read, so the card says why it is by hand.
+                        Text(text.redditManualNote)
+                            .font(.system(size: 9)).foregroundStyle(.white.opacity(0.5))
+                            .multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.8)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 } else {
                     Text(text.loading).font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
                 }
@@ -210,7 +217,7 @@ struct NotchStreaksView: View {
         .background(tint.opacity(0.16), in: Capsule())
         if manual, !done, !preview {
             Button { service.markRedditDone() } label: { pill.contentShape(Capsule()) }
-                .buttonStyle(.plain).help(text.markDone).accessibilityLabel(text.markDone)
+                .buttonStyle(.plain).help(text.redditManualNote).accessibilityLabel(text.markDone).accessibilityHint(text.redditManualNote)
         } else {
             pill
         }
@@ -248,6 +255,7 @@ struct NotchStreakSettingsControls: View {
             nameField(text.githubUsername, symbol: "chevron.left.forwardslash.chevron.right", value: $github)
             nameField(text.leetcodeUsername, symbol: "curlybraces", value: $leetcode)
             nameField(text.redditUsername, symbol: "bubble.left.and.bubble.right", value: $reddit)
+            Text(text.redditManualNote).font(.caption).foregroundStyle(.secondary)
             Text(text.usernameHint).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Divider()
