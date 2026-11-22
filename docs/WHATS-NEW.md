@@ -32,6 +32,7 @@ The short version is on the [README](../README.md#whats-new-in-nyx). This is the
 - **Uninstaller: cleanup after you drag an app to the Trash.** Optional, in the Uninstaller's settings (needs Full Disk Access). When you move an app to the Trash in Finder, Nyx can offer to clean up its leftover files. It asks before moving anything, and keeps data if the app is only being updated.
 - **Uninstaller scanning fix.** App sizes no longer miss folders that sit next to a symbolic link.
 - **Notch: full screen and newer macOS.** The island hides over an app's own full screen on every display and eases back afterwards, mirrored notification banners are hidden before they draw, the native banner is hidden on macOS 26 too, and the island stays off status items on macOS 27.
+- **A What's new window after updating.** After Nyx updates, a short window lists the biggest changes once. **See all changes** opens the release page, and **Settings → General → Updates → What's new** shows it again.
 - **Copy image** on Recent Captures and on the Shelf, so a screenshot goes straight to your clipboard.
 - **Downloads show their date.** Each finished download in the island lists when it was saved.
 - **Check for updates.** **Settings → General → Updates** looks at the Nyx releases page and tells you when a newer version is out, with a Download button. Turn on the daily check if you want it to look on its own. It never installs anything by itself.

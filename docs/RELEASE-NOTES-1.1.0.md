@@ -9,6 +9,7 @@
 - **Uninstaller: select all,** and an **optional cleanup offer** when you drag an app to the Trash (needs Full Disk Access).
 - **MP4 or MOV** for compressed videos in Media tools.
 - **The time of day beside a running timer** on the closed island.
+- **A What's new window** that opens once after Nyx updates, and again from Settings → General → Updates.
 
 ## Bug fixes
 
