@@ -18,7 +18,7 @@ struct NotchPlaybackSource: Equatable {
     var selection: Selection { Selection(pid: pid, bundleIdentifier: bundleIdentifier) }
 
     static func isMusicApplication(bundleIdentifier: String?, parentBundleIdentifier: String?, category: String?) -> Bool {
-        let knownMusicApps: Set<String> = ["com.apple.Music", "com.apple.iTunes", "com.spotify.client"]
+        let knownMusicApps: Set<String> = ["com.apple.Music", "com.apple.iTunes", "com.spotify.client", "com.nyx.utils"]
         return category == "public.app-category.music"
             || [bundleIdentifier, parentBundleIdentifier].compactMap { $0 }.contains(where: knownMusicApps.contains)
     }
@@ -48,6 +48,9 @@ struct NotchPlaybackSource: Equatable {
                   let music = entry["isMusicApp"] as? Bool, let playing = entry["isPlaying"] as? Bool,
                   let track = entry["hasTrack"] as? Bool, track || pid == selectedPID,
                   !sources.contains(where: { $0.pid == pid }) else { continue }
+            // Nyx's own web view plays YouTube songs from a helper process that
+            // reports as Nyx too. Only Nyx itself is listed, once.
+            if bundle == Bundle.main.bundleIdentifier, pid != ProcessInfo.processInfo.processIdentifier { continue }
             let name = (entry["displayName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
             sources.append(Self(pid: pid, bundleIdentifier: bundle, isMusicApp: music, isPlaying: playing, hasTrack: track,
                                 displayName: name.flatMap { !$0.isEmpty && $0.utf8.count <= 256 ? $0 : nil }))

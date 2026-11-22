@@ -1990,6 +1990,7 @@ def main():
           + declaration(music, "    private func apply(").replace("private func", "func", 1)
           + declaration(music, "    func seek(")
           + declaration(music, "    func selectSource(")
+          + "var playsInNyx: Bool { false }\nfunc sendToNyxPlayer(_ command: Command) -> Bool { false }\n"
           + declaration(music, "    func send(_ command: Command)").replace("    func", "    @discardableResult\n    func", 1)
           + declaration(music, "    func send(_ command: Command, context:").replace("    func", "    @discardableResult\n    func", 1)
           + "}\n}\n")
@@ -2020,6 +2021,7 @@ def main():
           + "let queue = Scheduler()\nvar refreshes = 0\nfunc refreshAutomation() { refreshes += 1 }\n"
           + "var validationRequests: [Command] = []\nfunc send(_ command: Command) -> Bool { validationRequests.append(command); return true }\n"
           + declaration(music, "    private struct AutomationAction {").replace("private struct", "struct", 1)
+          + "var playsInNyx: Bool { false }\n"
           + declaration(music, "    var canSeek:")
           + declaration(music, "    func canPerform(")
           + declaration(music, "    func lacksTrackSkipping(")

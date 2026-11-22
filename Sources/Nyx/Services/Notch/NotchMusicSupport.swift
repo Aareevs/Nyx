@@ -33,7 +33,7 @@ struct NotchPlayback: Equatable {
     let duration: TimeInterval
     let rate: Double
     let sampledAt: Date
-    let canSeek: Bool
+    var canSeek: Bool
     var hasPosition: Bool = true
     var itemIdentifier: String? = nil
     var commandContext: NotchPlaybackContext? = nil
@@ -46,6 +46,24 @@ struct NotchPlayback: Equatable {
     /// share no recording, so only their player tells them apart.
     static func sameRecording(_ first: NotchPlayback?, _ second: NotchPlayback?) -> Bool {
         first?.commandContext == second?.commandContext && first?.track.appPID == second?.track.appPID
+    }
+
+    /// Whether Nyx itself is the player, as with a YouTube playlist.
+    var isNyxPlayer: Bool {
+        track.appBundleIdentifier == Bundle.main.bundleIdentifier
+            || track.appPID == ProcessInfo.processInfo.processIdentifier
+    }
+
+    /// A song Nyx plays itself needs no outside player: its buttons, skips and
+    /// seeking go straight to Nyx's own player.
+    func adjustedForOwnPlayer() -> NotchPlayback {
+        guard isNyxPlayer else { return self }
+        var own = self
+        own.canSendCommandsDirectly = true
+        own.canSkipNext = true
+        own.canSkipPrevious = true
+        own.canSeek = true
+        return own
     }
 
     func position(at date: Date) -> TimeInterval {
