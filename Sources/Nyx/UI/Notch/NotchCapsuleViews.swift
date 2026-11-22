@@ -341,7 +341,7 @@ struct NotchCapsuleTimerStrip: View {
     var body: some View {
         NotchCapsuleRow(size: size, geometry: geometry,
                         leading: companion == .music ? CapsuleLayout.artworkInset(geometry) : CapsuleLayout.endPadding) {
-            HStack(spacing: CapsuleLayout.markGap(companion)) {
+            HStack(spacing: companion == nil ? 0 : CapsuleLayout.markGap(companion)) {
                 mark
                 if timer.session.isRunning {
                     TimelineView(.periodic(from: Date(timeIntervalSinceNow: NotchTimerSupport.tickScheduleOffset(
@@ -360,9 +360,6 @@ struct NotchCapsuleTimerStrip: View {
     @ViewBuilder private var mark: some View {
         if let companion {
             NotchCapsuleCompanionMark(companion: companion, geometry: geometry)
-        } else {
-            NotchCapsuleSymbol(name: timer.session.completed ? "checkmark.circle" : timer.session.isPaused ? "pause.circle"
-                               : timer.session.countsUp ? "stopwatch" : "timer", tint: .orange)
         }
     }
 

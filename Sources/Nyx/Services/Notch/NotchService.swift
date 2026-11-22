@@ -766,7 +766,13 @@ final class NotchService: ObservableObject {
         let reading = (NotchAgentSupport.readingShape(text) as NSString).size(withAttributes: [
             .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: .medium)
         ]).width.rounded(.up) + provisional.compactActivityEdgeInset(boxHeight: size * 0.72, radius: 0)
-        return max(reading, companionMarkWidth(companion, in: provisional)) + NotchTimerSupport.stripCameraGap
+        var left = companionMarkWidth(companion, in: provisional)
+        if companion == nil {
+            let day = (NotchTimerSupport.dayClockText(Date(), locale: .autoupdatingCurrent).replacingOccurrences(of: "[0-9]", with: "8", options: .regularExpression) as NSString)
+                .size(withAttributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: NotchTimerSupport.dayClockSize(height: height), weight: .medium)]).width.rounded(.up)
+            left = day + provisional.compactActivityEdgeInset(boxHeight: size * 0.72, radius: 0)
+        }
+        return max(reading, left) + NotchTimerSupport.stripCameraGap
     }
 
     /// The width of the mark at a strip's left end, the timer's own without a

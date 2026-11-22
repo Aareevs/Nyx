@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The clock keeps the right of the camera. The left shows the timer's mark,
+/// The clock keeps the right of the camera. The left shows the time of day,
 /// or its explicitly chosen companion: a download, working agents, the next
 /// event's clock or the music playing, each opening its own page. The wings
 /// are as wide as the wider side needs, and both sit at the ends, where the
@@ -25,7 +25,7 @@ struct NotchTimerStrip: View {
     private var iconInset: CGFloat {
         guard !geometry.compactActivityUsesFooter else { return 0 }
         if let companion { return NotchCompanionMark.inset(companion, geometry: geometry) }
-        return geometry.compactActivityEdgeInset(boxHeight: iconSize, radius: iconSize / 2)
+        return textInset
     }
     private var textInset: CGFloat {
         guard !geometry.compactActivityUsesFooter else { return 0 }
@@ -44,10 +44,14 @@ struct NotchTimerStrip: View {
                         if let companion {
                             NotchCompanionMark(companion: companion, geometry: geometry)
                         } else {
-                            Image(systemName: timer.session.completed ? "checkmark.circle"
-                                  : timer.session.isPaused ? "pause.circle" : timer.session.countsUp ? "stopwatch" : "timer")
-                                .font(.system(size: iconSize, weight: .medium))
-                                .foregroundStyle(.orange)
+                            // With nothing sharing the island, this side tells
+                            // the time of day.
+                            TimelineView(.everyMinute) { context in
+                                Text(NotchTimerSupport.dayClockText(context.date, locale: Locale.autoupdatingCurrent))
+                                    .font(.system(size: NotchTimerSupport.dayClockSize(height: geometry.compactActivityContentHeight), weight: .medium)).monospacedDigit()
+                                    .foregroundStyle(.white.opacity(0.9))
+                                    .lineLimit(1).fixedSize()
+                            }
                         }
                     }
                 }

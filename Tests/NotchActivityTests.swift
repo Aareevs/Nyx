@@ -529,14 +529,14 @@ enum NotchActivityTests {
                && NotchTimerSupport.clockText(for: countdown, at: 0.1) == "01:00",
                "session clocks read elapsed time up and remaining time down")
         suite.expect(NotchTimerSupport.compactText(for: stopwatch, at: 61.9, locale: locale) == "01:01"
-               && NotchTimerSupport.compactText(for: countdown, at: 0.1, locale: locale) == "1m",
-               "compact session readings keep each mode's own notation")
+               && NotchTimerSupport.compactText(for: countdown, at: 0.1, locale: locale) == "01:00",
+               "compact session readings show seconds below an hour")
         var hours = NotchTimerSession()
         hours.start(mode: .timer, minutes: 120, now: 0)
         suite.expect(NotchTimerSupport.compactText(for: hours, at: 1, locale: locale) == "1h59"
                && NotchTimerSupport.compactText(for: hours, at: 3600, locale: locale) == "1h00"
-               && NotchTimerSupport.compactText(for: hours, at: 3601, locale: locale) == "59m",
-               "compact countdowns still switch from hours to minutes at the hour boundary")
+               && NotchTimerSupport.compactText(for: hours, at: 3601, locale: locale) == "59:59",
+               "compact countdowns still switch from hours to a seconds clock at the hour boundary")
 
         let domain = "com.nyx.tests.timer-mode"
         let defaults = UserDefaults(suiteName: domain)!

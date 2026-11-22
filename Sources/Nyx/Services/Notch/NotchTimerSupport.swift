@@ -294,7 +294,7 @@ enum NotchTimerSupport {
     static func compactText(for session: NotchTimerSession, at now: TimeInterval, locale: Locale) -> String {
         let reading = session.reading(at: now)
         if session.countsUp { return compactStopwatchText(reading) }
-        return reading >= 3600 ? compactHoursText(reading) : compactText(reading, locale: locale)
+        return reading >= 3600 ? compactHoursText(reading) : clockText(reading)
     }
 
     /// Seconds until the reading next crosses a whole second. A tick every
@@ -327,9 +327,21 @@ enum NotchTimerSupport {
 
     // MARK: Strip
 
+    /// The time of day beside a running timer: hours and minutes, in the
+    /// person's own 12 or 24 hour habit, with AM or PM in the 12 hour one.
+    static func dayClockText(_ date: Date, locale: Locale = .current) -> String {
+        let uses24 = !(DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: locale) ?? "").contains("a")
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.dateFormat = uses24 ? "HH:mm" : "h:mm a"
+        return formatter.string(from: date)
+    }
+
     /// A wing is never narrower than the music strip's; the longest readings
     /// keep the width the strip always had.
     static let stripWingRange: ClosedRange<CGFloat> = 44...64
+    /// The time of day is a little smaller than the timer's reading.
+    static func dayClockSize(height: CGFloat) -> CGFloat { stripTextSize(height: height) * 0.78 }
     /// Air between the camera and what sits beside it.
     static let stripCameraGap: CGFloat = 6
 
