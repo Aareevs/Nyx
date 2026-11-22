@@ -8,6 +8,7 @@ struct UninstallerView: View {
     @ObservedObject private var uninstaller = AppUninstaller.shared
     @ObservedObject private var permissions = Permissions.shared
     @AppStorage(DefaultsKey.uninstallerCommandBarEnabled) private var commandBarEnabled = false
+    @AppStorage(DefaultsKey.uninstallerWatchesTrash) private var watchesTrash = false
     @State private var dropTargeted = false
     @State private var showingAppPicker = false
 
@@ -36,6 +37,13 @@ struct UninstallerView: View {
             Section {
                 Toggle(l10n.s.uninstallerCommandBarToggle, isOn: $commandBarEnabled)
                 Text(l10n.s.uninstallerCommandBarCaption)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section {
+                Toggle(l10n.s.uninstallerWatchTrashToggle, isOn: $watchesTrash)
+                    .onChange(of: watchesTrash) { _, _ in TrashAppWatcher.shared.syncWithPreferences() }
+                Text(l10n.s.uninstallerWatchTrashCaption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -207,7 +215,16 @@ struct UninstallerView: View {
     }
 
     private var footer: some View {
-        HStack {
+        HStack(spacing: 12) {
+            MixedStateCheckbox(
+                title: l10n.s.uninstallerSelectAll,
+                isOn: uninstaller.bulkSelection == .all,
+                isMixed: uninstaller.bulkSelection == .some,
+                isEnabled: !uninstaller.isRemoving && !uninstaller.items.isEmpty,
+                fontSize: 12
+            ) {
+                uninstaller.setAllIncluded(uninstaller.bulkSelection.nextInclude)
+            }
             VStack(alignment: .leading, spacing: 1) {
                 Text(String(format: l10n.s.uninstallerSelectedFormat,
                             uninstaller.items.filter(\.include).count, uninstaller.items.count))

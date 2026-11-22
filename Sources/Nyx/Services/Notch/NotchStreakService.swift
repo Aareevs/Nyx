@@ -132,7 +132,19 @@ final class NotchStreakService: ObservableObject {
                 if status == 404 { return .failure(.notFound) }
                 guard status == 200, let html = String(data: data, encoding: .utf8),
                       let days = NotchStreakSupport.githubActiveDays(from: html) else { return .failure(.unavailable) }
-                return .success(NotchStreakSupport.snapshot(days: days, now: Date(),
+                // The page counts days in UTC; the activity feed knows the exact
+                // time of each action, so today's first one shows at once.
+                var active = days
+                var feed = URLRequest(url: URL(string: "https://api.github.com/users/\(username)/events/public?per_page=100")!,
+                                      timeoutInterval: 20)
+                feed.setValue("Nyx/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+                feed.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+                if let (feedData, feedResponse) = try? await URLSession.shared.data(for: feed),
+                   (feedResponse as? HTTPURLResponse)?.statusCode == 200 {
+                    let today = NotchStreakSupport.day(for: .github, Date())
+                    active.formUnion(NotchStreakSupport.githubEventDays(from: feedData).filter { $0 == today })
+                }
+                return .success(NotchStreakSupport.snapshot(days: active, now: Date(),
                                                                   today: NotchStreakSupport.day(for: .github, Date())))
             case .leetcode:
                 var request = URLRequest(url: URL(string: "https://leetcode.com/graphql")!, timeoutInterval: 20)

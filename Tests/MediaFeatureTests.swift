@@ -425,6 +425,12 @@ enum MediaFeatureTests {
         suite.expect(MediaSupport.outputURL(for: mediaInput, suffix: "-compressed", fileExtension: "mp4").path
                == "/tmp/Clip-compressed.mp4",
                "Media output names keep clear suffixes")
+        suite.expect(MediaVideoFormat.sanitized("mov") == .mov && MediaVideoFormat.sanitized("avi") == .mp4
+               && MediaVideoFormat.allCases.map(\.fileExtension) == ["mp4", "mov"],
+               "Media video formats are MP4 and MOV, and anything else reads as MP4")
+        suite.expect(MediaSupport.outputURL(for: mediaInput, suffix: "-compressed", fileExtension: MediaVideoFormat.mov.fileExtension).path
+               == "/tmp/Clip-compressed.mov",
+               "Media video output takes the chosen format's extension")
         let hiddenMediaInput = URL(fileURLWithPath: "/tmp/.Clip.mov")
         suite.expect(MediaSupport.outputURL(for: hiddenMediaInput, suffix: "", fileExtension: "gif").path
                == "/tmp/Clip.gif",

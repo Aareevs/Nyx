@@ -47,24 +47,17 @@ If you like a tidy, all-in-one Mac setup that stays out of your way, you might e
 
 ## What's new in Nyx
 
-Nyx started from the open-source [Vorssaint](https://github.com/vorssaint/vorssaint-utils) and has since gone its own way. These are the things it has that Vorssaint does not:
+Nyx started from the open-source [Vorssaint](https://github.com/vorssaint/vorssaint-utils) and has since gone its own way. Here are the highlights of what it has that Vorssaint does not:
 
-- **Spotify in the island.** Browse your playlists, reorder them, play any song and see what's up next, all from the island. Needs **Spotify Premium**. See [Spotify in the Dynamic Island](#spotify-in-the-dynamic-island).
-- **Time and weather on the island.** The closed island shows the time on the left and the weather, with an emoji, on the right. The weather uses your approximate location if you allow it (Open-Meteo, with MET Norway as a fallback, no account).
-- **Calculator in the island.** A new section with three modes: basic arithmetic (powers, roots, fractions), trigonometry (sin, cos, tan, csc, sec, cot and their inverses, in degrees or radians), and calculus (derivatives, integrals, complex numbers, factorials). Shortcut ⌥⌘K.
-- **Alarms in the island.** A new section for alarms that ring from the island: set a time with scroll wheels, add a label, and repeat on the days you pick, or ring once. A ringing alarm plays a sound and stays on the closed island with a **Stop** button until you stop it, and the Alarms page can snooze it for 5 minutes. Shortcut ⌥⌘L. Nyx has to be running for an alarm to ring.
-- **Add events to Calendar.** The island's Calendar page has a **+** button that opens a small form for a title, date and time, all day, and which calendar to save to. Events go into the Calendar app, so they sync as usual.
-- **Teleprompter in the island.** A new section for reading a script while you record or present. Type it in the built-in editor or paste it, set the speed in WPM, and follow the current line with the lines before and after it dimmed, a progress bar and the time left. Lines fill the width of the island, and a resize button on the page switches between the normal and a larger size. It can hide the island from screen recordings and screenshots (on by default; some screen-sharing apps may still show it). Shortcut ⌥⌘E.
-- **Streaks in the island.** Add your GitHub, LeetCode and Reddit usernames and the island shows each streak with a flame, whether today is done, and your best run. The closed island greets a streak with its logo and an animated flame, and at a time you pick it rings like an alarm only if a streak is still open, then stops once you have done it. Off by default; it looks the usernames up online (see the privacy notes), turns the day over at your Mac's local midnight (LeetCode counts in UTC like the service), GitHub only counts private contributions if your profile shows them, and Reddit's streak is private, so you tap Mark done and Nyx counts those days. Shortcut ⌥⌘J.
-- **A full color picker.** The Color picker now opens a panel instead of sampling the screen straight away: a gradient square and hue slider, an editable hex value, HEX, RGB and HSL rows with a copy button each, WCAG contrast against white and black, a list of recent colors, and a Pick from screen button.
-- **Edit clipboard text in Scratchpad.** Text entries in the island's Clipboard have a pen button that opens the text in Scratchpad.
-- **Menu bar folder.** Collapse the menu bar icons you rarely use into one folder, and click through to them without leaving the bar.
-- **Antigravity usage.** The AI agents section reads Antigravity's conversations and shows its token use, models and cost, with its own card and the Gemini mark. Also, in settings can turn off showing Antigravity as working.
-- **Claude limits fixed up.** Claude plan limits are read more reliably, and limit bars now default to showing how much you have used.
-- **Copy image** on Recent Captures and on the Shelf, so a screenshot goes straight to your clipboard.
-- **Downloads show their date.** Each finished download in the island lists when it was saved.
-- **Check for updates.** **Settings → General → Updates** looks at the Nyx releases page and tells you when a newer version is out, with a Download button. Turn on the daily check if you want it to look on its own. It never installs anything by itself.
-- **Smoother, lighter app.** Fan Control, Kill Process, Port Manager, Disk Image Installer, Homebrew management, feedback and link sharing are gone, along with the extra languages (English only), so there is no privileged helper and far less code to trust. The source is about 20% smaller.
+- **Chat.** Talk to Claude, OpenAI, Gemini or NVIDIA from the island with your own key, and send it files.
+- **Spotify and YouTube playlists.** Browse, play and skip songs from the island. YouTube plays inside Nyx, no browser. Spotify needs **Spotify Premium**. See [Spotify in the Dynamic Island](#spotify-in-the-dynamic-island).
+- **Tap the notch (experimental).** Open the island with a fingertip tap on the notch.
+- **Calculator, Alarms and Teleprompter.** Three new island sections.
+- **Streaks.** GitHub, LeetCode and Reddit streaks with a flame, and an alarm if one is still open. Reddit is marked by hand, because reddit.com doesn't allow apps to read it.
+- **Time and weather** on the closed island, and **Calendar events** you can add from it.
+- **Plus smaller things:** a full color picker, a menu bar folder, Antigravity usage, MP4 or MOV for compressed videos and update checks.
+
+**[See everything that's new →](docs/WHATS-NEW.md)**
 
 ## Features
 
@@ -195,7 +188,7 @@ Clipboard history · Auto clear clipboard · Paste as plain text · Shelf · Fin
 
 ### Everyday tools
 
-Dynamic Island · AI agents · Command Bar · Quick panel · Quick toggles · Quit apps · Radial menu · Scratchpad · Streaks · Teleprompter · Cleaning Mode
+Dynamic Island · AI agents · Command Bar · Quick panel · Quick toggles · Quit apps · Radial menu · Scratchpad · Streaks · Chat · Teleprompter · Cleaning Mode
 
 <details>
 <summary><b>Details and screenshots</b></summary>
@@ -211,7 +204,8 @@ Dynamic Island · AI agents · Command Bar · Quick panel · Quick toggles · Qu
 - **Radial menu.** Open a customizable wheel of apps, files, shortcuts and tools around the pointer, with profiles and submenus.
 - **Scratchpad.** Keep autosaved notes in tabs, with Markdown preview and export, in a floating window or Dynamic Island.
 - **Teleprompter.** Read a typed or pasted script line by line from the Dynamic Island at a speed you set, switch it to a larger size, and keep the island hidden from screen recordings.
-- **Streaks.** Keep your GitHub, LeetCode and Reddit streaks alive from the Dynamic Island: a card for each with a flame, "done today" or "not done yet", and your best run, a closed-island animation when you extend one, and a reminder that rings only while a streak is still open. Off by default, public usernames only.
+- **Streaks.** Keep your GitHub, LeetCode and Reddit streaks alive from the Dynamic Island: a card for each with a flame, "done today" or "not done yet", and your best run, a closed-island animation when you extend one, and a reminder that rings only while a streak is still open. Off by default, public usernames only. **Reddit is marked by hand:** reddit.com doesn't allow apps to read a Reddit streak, so you tap **Mark done** each day and Nyx counts the days you mark.
+- **Chat.** Talk to Claude, OpenAI, Gemini or NVIDIA from the Dynamic Island with your own API key, kept in a private file on your Mac. Streaming replies, saved chats, and an optional shortcut that asks about the text you have selected.
 - **Cleaning Mode.** Lock keyboard input while cleaning, with a black screen or a small visible indicator.
 
 <p align="center">
@@ -237,6 +231,7 @@ Playlists · Play a song · Reorder · Up next
 
 - **Sign in once.** Connect from the island's Spotify page. The login uses PKCE, so no secret is stored, and it is kept in a private file only your account can read.
 - **Playlists.** Browse your playlists, open one and tap a song to play it on Spotify without opening the app. Use the arrows button to reorder your playlists.
+- **YouTube and YouTube Music playlists.** Switch the Playlists page to YouTube and paste a playlist link. Public and unlisted playlists work, no sign-in needed, and they're saved only on this Mac. Tap a song and it plays right inside Nyx, with no browser, and the island's player shows it with play, pause, next, previous and seek. YouTube's ads play unless you use the optional **Sign in to YouTube** (the person icon next to **+**), so your YouTube Premium applies. The login stays in Nyx's own storage and you can sign out there.
 - **Up next.** See the next five songs from Spotify, or from a YouTube playlist in your browser, and tap one to jump to it.
 - **YouTube queue.** Turn on **Allow JavaScript from Apple Events** in your browser's developer menu, and switch on the queue lookup in **Settings → Dynamic Island → Music**.
 
@@ -315,7 +310,7 @@ To remove Nyx completely, including its settings and permissions:
 
 ## Private by default
 
-Nyx is local-first, with no account, analytics or tracking. The network is touched only by things you can see: the speed test, optional online lyric lookup and the app update check for other apps you run yourself. The full story is in the [privacy notes](docs/PRIVACY.md).
+Nyx is local-first, with no account, analytics or tracking. The network is touched only by things you can see: the speed test, optional online lyric lookup, the app update check for other apps you run yourself, and Chat, which sends your messages straight to the service whose API key you added. The full story is in the [privacy notes](docs/PRIVACY.md).
 
 Permissions get the same treatment. Every one is optional, the app explains each in plain words, shows which features actually use it, and even tells you when a permission you granted is no longer needed by anything, with a shortcut to revoke it.
 
@@ -362,8 +357,12 @@ See [troubleshooting](docs/TROUBLESHOOTING.md) for launch problems, permissions 
 
 Nyx is built on [Vorssaint](https://github.com/vorssaint/vorssaint-utils), an open-source macOS utility by [@vorssaint](https://x.com/vorssaint). The original idea, structure and a large part of the code come from that project, and it is where to look for the upstream version. Everything under "What's new in Nyx" above was added on top by [Aareevs](https://github.com/Aareevs).
 
+**Thank you to [Sentient OS](https://github.com/Sentient-OS-Labs/sentient-os).** Tapping the notch with a fingertip to open the island uses their idea and code for reading a tap from the ambient light sensor together with the motion sensors. It is theirs to thank for, and it is adapted here with their notice kept (see [NOTICE](NOTICE)).
+
 The GitHub, LeetCode and Reddit logos in Streaks, and the Spotify logo in Connectors, and the X, Reddit, Instagram, Netflix, Hotstar and LinkedIn marks shown for browser media, are trademarks of their owners and are used only to label those services.
 
 ## License
 
 [GPL 3.0 or later](LICENSE). Nyx is a modified version of Vorssaint, copyright 2026 Vorssaint, with Nyx's own changes copyright 2026 [Aareevs](https://github.com/Aareevs). As the license requires, the source stays open under the same terms. The Vorssaint name, logo and look are not part of this license (see the original [TRADEMARKS.md](https://github.com/vorssaint/vorssaint-utils/blob/main/TRADEMARKS.md)), and Nyx uses its own name, icon and identity.
+
+The notch-tap files (`NotchTapDetection.swift` and `NotchTapSensor.swift`) are adapted from [Sentient OS](https://github.com/Sentient-OS-Labs/sentient-os), which is licensed under the [GNU AGPL 3.0](https://github.com/Sentient-OS-Labs/sentient-os/blob/main/LICENSE); see [NOTICE](NOTICE).

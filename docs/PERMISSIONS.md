@@ -16,7 +16,7 @@ You can review or change every grant in System Settings, under Privacy and Secur
 | Bluetooth | Yes | Accessory battery levels in Monitor, optional accessory alerts in the notch and Bluetooth on sleep |
 | Files and Folders | Yes | Monitoring downloads in a folder you choose |
 | Notifications | Yes | Keep awake, battery, Monitor and app update alerts |
-| Full Disk Access | Yes | A deeper uninstaller scan |
+| Full Disk Access | Yes | A deeper uninstaller scan and the optional cleanup offer for apps moved to the Trash |
 | Administrator (one time) | Yes | Password free closed lid toggling |
 | Automation | Yes | Finder actions, supported music playback controls and reading browser tab titles |
 | App Management | Yes | App installs, updates and removal |
@@ -37,6 +37,7 @@ You can review or change every grant in System Settings, under Privacy and Secur
 - **Paste as plain text**, which presses ⌘V for you after stripping the formatting.
 - **Finder cut and paste**, which steps in on ⌘X and ⌘V while Finder is in front.
 - **Quit on close**, which spots when an app's last window goes away.
+- **Chat**, optionally: when you open it with its shortcut, it reads the text selected in the app in front, if Accessibility is already allowed for another feature. Chat never asks for this permission itself and works fully without it.
 - **Radial menu**, for wheel actions that press a key combo or a media key
   for you and for the optional side button trigger; opening apps, files and
   links with the keyboard shortcut alone needs nothing.
@@ -132,9 +133,9 @@ Download monitoring watches only the folder you choose in the system picker. Fol
 
 **Why it comes up.** The uninstaller hunts down the files an app leaves behind, like caches, preferences and logs. Some of those spots are protected by macOS and only open up with Full Disk Access.
 
-**What uses it.** The uninstaller, for a deeper scan.
+**What uses it.** The uninstaller, for a deeper scan. The optional Finder cleanup offer watches for an app moving from an Applications folder into your local Trash. You choose the data to remove and confirm that you intended to uninstall the app. Cancel if an updater moved it.
 
-**If you say no.** The uninstaller still works and scans the places it can reach. It just might not surface files tucked away in protected folders.
+**If you say no.** The uninstaller still works and scans the places it can reach. It just might not surface files tucked away in protected folders, and the cleanup offer for trashed apps stays off.
 
 **Optional.** Yes. There is no pop up for Full Disk Access. You add Nyx in System Settings, under Privacy and Security, Full Disk Access, and Nyx opens that pane for you when the feature calls for it.
 

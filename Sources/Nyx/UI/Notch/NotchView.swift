@@ -574,6 +574,7 @@ struct NotchView: View {
             case .alarms: NotchAlarmsView(size: pageSize)
             case .teleprompter: NotchTeleprompterView(size: pageSize)
             case .streaks: NotchStreaksView(size: pageSize)
+            case .chat: NotchChatView(size: pageSize)
             }
         }
     }
@@ -820,6 +821,7 @@ extension NotchModule: PanelOrderItem {
         case .alarms: return FeatureStrings.notchAlarms(language).title
         case .teleprompter: return FeatureStrings.notchTeleprompter(language).title
         case .streaks: return FeatureStrings.notchStreaks(language).title
+        case .chat: return FeatureStrings.notchChat(language).title
         }
     }
 }

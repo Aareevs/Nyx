@@ -267,6 +267,13 @@ if (( TEST )); then
         Sources/Nyx/Services/Notch/NotchAlarmSupport.swift
         Sources/Nyx/Core/NotchStreakStrings.swift
         Sources/Nyx/Services/Notch/NotchStreakSupport.swift
+        Sources/Nyx/Core/NotchChatStrings.swift
+        Sources/Nyx/Services/Chat/ChatSupport.swift
+        Sources/Nyx/Services/Chat/ChatFiles.swift
+        Sources/Nyx/Services/Notch/NotchTapSupport.swift
+        Sources/Nyx/Services/Notch/NotchTapDetection.swift
+        Sources/Nyx/Services/YouTube/YouTubePlaylistSupport.swift
+        Sources/Nyx/Services/Chat/ChatTransport.swift
         Sources/Nyx/Core/NotchTeleprompterStrings.swift
         Sources/Nyx/Services/Notch/NotchTeleprompterSupport.swift
         Sources/Nyx/Services/Notch/NotchWatchSupport.swift
@@ -315,6 +322,7 @@ if (( TEST )); then
         Sources/Nyx/Services/Notch/NotchCalendarSupport.swift
         Sources/Nyx/Services/Notch/NotchKeepAwakeSupport.swift
         Sources/Nyx/Services/Notch/NotchSupport.swift
+        Sources/Nyx/Services/Notch/NotchMenuBarSpace.swift
         Sources/Nyx/Services/Notch/NotchAudioLevelSupport.swift
         Sources/Nyx/Services/Notch/NotchVolumeKeyGate.swift
         Sources/Nyx/Services/Notch/NotchMusicSupport.swift

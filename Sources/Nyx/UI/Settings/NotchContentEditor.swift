@@ -179,6 +179,7 @@ struct NotchPagePreview: View {
         case .alarms: NotchAlarmsView(size: size)
         case .teleprompter: NotchTeleprompterView(size: size)
         case .streaks: NotchStreaksView(size: size)
+        case .chat: NotchChatView(size: size)
         }
     }
 
@@ -415,6 +416,7 @@ extension NotchModule {
         case .alarms: return .pink
         case .teleprompter: return .mint
         case .streaks: return .orange
+        case .chat: return Color(red: 0.36, green: 0.52, blue: 0.98)
         }
     }
 

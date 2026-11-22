@@ -4,7 +4,7 @@ import Foundation
 import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms, teleprompter, streaks
+    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms, teleprompter, streaks, chat
     var id: String { rawValue }
 
     var symbol: String {
@@ -32,6 +32,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .alarms: return "alarm"
         case .teleprompter: return "text.alignleft"
         case .streaks: return "flame"
+        case .chat: return "bubble.left.and.text.bubble.right"
         }
     }
 
@@ -58,6 +59,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .alarms: return "l"
         case .teleprompter: return "e"
         case .streaks: return "j"
+        case .chat: return "h"
         }
     }
 
@@ -85,12 +87,40 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .alarms: return AppFeature.notchAlarms.isAvailable(in: defaults)
         case .teleprompter: return AppFeature.notchTeleprompter.isAvailable(in: defaults)
         case .streaks: return AppFeature.notchStreaks.isAvailable(in: defaults)
+        case .chat: return AppFeature.notchChat.isAvailable(in: defaults)
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .connectedDevices].contains { (feature: AppFeature) in
                 feature.isAvailable(in: defaults)
             }
         }
+    }
+}
+
+/// How large the chat page is, whatever the island's own size: a conversation
+/// needs more room than a page of controls. Applies to every layout, a custom
+/// one included, which sets the size of the other pages.
+enum NotchChatSize: String, CaseIterable {
+    case regular, large, huge
+
+    var heightScale: CGFloat {
+        switch self {
+        case .regular: return 1.5
+        case .large: return 2.0
+        case .huge: return 2.6
+        }
+    }
+
+    var widthScale: CGFloat {
+        switch self {
+        case .regular: return 1.25
+        case .large: return 1.5
+        case .huge: return 1.8
+        }
+    }
+
+    static func current(in defaults: UserDefaults = .standard) -> NotchChatSize {
+        defaults.string(forKey: DefaultsKey.notchChatSize).flatMap(NotchChatSize.init(rawValue:)) ?? .large
     }
 }
 
@@ -1302,9 +1332,11 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
     case volume, brightness, keyboardLight, music, mixer, keepAwake, timer, calendar, microphone, screenshot, recording, speedTest, panel, commandBar, scratchpad
     // More tiles to choose from in Settings. All start hidden.
     case colorPicker, screenText, clipboard, camera, cleaning, calculator, alarms, teleprompter, streaks
+    // Chat has a bar of its own on Home; this tile is for anyone who also wants one among the shortcuts.
+    case chat
     static let defaultHidden = "keyboardLight,microphone,screenshot,recording,speedTest,panel,commandBar,scratchpad," + extraHidden
     /// The tiles added after the first set, hidden until someone picks them.
-    static let extraHidden = "colorPicker,screenText,clipboard,camera,cleaning,calculator,alarms,teleprompter,streaks"
+    static let extraHidden = "colorPicker,screenText,clipboard,camera,cleaning,calculator,alarms,teleprompter,streaks,chat"
     var id: String { rawValue }
 
     /// A level draws as a slider in the card row; everything else is a tile.
@@ -1343,6 +1375,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return NotchModule.alarms.symbol
         case .teleprompter: return NotchModule.teleprompter.symbol
         case .streaks: return NotchModule.streaks.symbol
+        case .chat: return NotchModule.chat.symbol
         }
     }
 
@@ -1355,6 +1388,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return .alarms
         case .teleprompter: return .teleprompter
         case .streaks: return .streaks
+        case .chat: return .chat
         default: return nil
         }
     }
@@ -1384,6 +1418,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return .page(.alarms, feature: .notchAlarms)
         case .teleprompter: return .page(.teleprompter, feature: .notchTeleprompter)
         case .streaks: return .page(.streaks, feature: .notchStreaks)
+        case .chat: return .page(.chat, feature: .notchChat)
         }
     }
 
@@ -1413,6 +1448,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return NotchSupport.modules(in: defaults).contains(.alarms)
         case .teleprompter: return NotchSupport.modules(in: defaults).contains(.teleprompter)
         case .streaks: return NotchSupport.modules(in: defaults).contains(.streaks)
+        case .chat: return NotchSupport.modules(in: defaults).contains(.chat)
         }
     }
 }
@@ -1933,6 +1969,7 @@ enum NotchSupport {
                 && ($0 != .alarms || defaults.bool(forKey: DefaultsKey.notchAlarmsEnabled))
                 && ($0 != .teleprompter || defaults.bool(forKey: DefaultsKey.notchTeleprompterEnabled))
                 && ($0 != .streaks || defaults.bool(forKey: DefaultsKey.notchStreaksEnabled))
+                && ($0 != .chat || defaults.bool(forKey: DefaultsKey.notchChatEnabled))
         }
     }
 
@@ -2161,6 +2198,11 @@ enum NotchSupport {
         isEnabled(in: defaults) && defaults.bool(forKey: DefaultsKey.notchAppPanel)
     }
 
+    /// Whether the chat page can be opened: the island is on and shows it.
+    static func routesChat(in defaults: UserDefaults = .standard) -> Bool {
+        isEnabled(in: defaults) && modules(in: defaults).contains(.chat)
+    }
+
     static func routesScratchpad(in defaults: UserDefaults = .standard) -> Bool {
         isEnabled(in: defaults) && (defaults.object(forKey: DefaultsKey.notchScratchpad) as? Bool ?? true)
             && modules(in: defaults).contains(.scratchpad)
@@ -2310,6 +2352,7 @@ struct NotchGeometry: Equatable {
     /// notice reaches further toward its wider side. Zero everywhere else.
     var surfaceShift: CGFloat = 0
     let cameraWidth: CGFloat
+    let physicalCamera: CGRect?
     /// The island's camera region, including optional menu-bar coverage,
     /// manual fit and outline clearance, rather than just the hardware inset.
     let cameraHeight: CGFloat
@@ -2348,7 +2391,7 @@ struct NotchGeometry: Equatable {
     /// Narrower wings than this are dropped rather than drawn cramped.
     private var minimumWing: CGFloat = 44
 
-    init(screen: CGRect, safeAreaTop: CGFloat, cameraWidth: CGFloat, layout: NotchSize = .compact,
+    init(screen: CGRect, safeAreaTop: CGFloat, cameraWidth: CGFloat, physicalCameraX: CGFloat? = nil, layout: NotchSize = .compact,
          menuBarHeight: CGFloat = 24, compactSideRoom: CGFloat? = nil,
          customWidth: Double = NotchSize.defaultWidth, customHeight: Double = NotchSize.defaultHeight,
          cameraFit: NotchCameraFit = .zero, silhouette: NotchSilhouette = .notch, capsuleFit: NotchCapsuleFit = .zero,
@@ -2359,6 +2402,8 @@ struct NotchGeometry: Equatable {
         self.customHeight = NotchSize.clamped(customHeight, to: NotchSize.heightRange, fallback: NotchSize.defaultHeight)
         let barHeight = menuBarHeight.isFinite ? min(64, max(16, menuBarHeight)) : 24
         isNotched = safeAreaTop.isFinite && safeAreaTop > 0 && cameraWidth.isFinite && cameraWidth > 0
+        physicalCamera = isNotched ? CGRect(x: physicalCameraX ?? (screen.midX - cameraWidth / 2),
+                                           y: screen.maxY - safeAreaTop, width: cameraWidth, height: safeAreaTop) : nil
         // Only a physical camera has an outline to match; a simulated one follows the bar.
         let fit = isNotched ? cameraFit : .zero
         // A capsule replaces only a simulated cutout. It is as wide as the
@@ -2403,7 +2448,7 @@ struct NotchGeometry: Equatable {
     var floats: Bool { floatingGap != nil }
 
     func hasSameMenuBar(as other: NotchGeometry) -> Bool {
-        screen == other.screen && cameraWidth == other.cameraWidth
+        screen == other.screen && cameraWidth == other.cameraWidth && physicalCamera == other.physicalCamera
             && menuBarHeight == other.menuBarHeight && isNotched == other.isNotched
     }
 
@@ -2813,7 +2858,8 @@ struct NotchGeometry: Equatable {
                       capturePreviewHeight: CGFloat? = nil,
                       timerHasSession: Bool = false, timerMode: NotchTimerMode = .timer,
                       agentsHeight: CGFloat? = nil,
-                      teleprompterSize: NotchTeleprompterSize = .medium) -> CGSize {
+                      teleprompterSize: NotchTeleprompterSize = .medium,
+                      chatSize: NotchChatSize = .large) -> CGSize {
         let budget = contentBudget
         let showsCapturePreview = module == .captures && !detail && capturePreviewHeight != nil
         let showsFileMedia = module == .files && !detail && fileMediaHeight != nil
@@ -2868,6 +2914,9 @@ struct NotchGeometry: Equatable {
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch, .calculator, .alarms, .streaks:
                 contentHeight = budget
+            case .chat:
+                // A conversation needs room to read, so the page has its own size.
+                contentHeight = budget * chatSize.heightScale
             case .teleprompter:
                 // The page has its own size, chosen on the page itself.
                 contentHeight = budget * teleprompterSize.heightScale
@@ -2875,10 +2924,14 @@ struct NotchGeometry: Equatable {
         }
         var preferredHeight = headerTopInset + headerChromeHeight + contentHeight
         let resizesTeleprompter = module == .teleprompter && !detail && !panel
-        if layout == .custom, !resizesTeleprompter { preferredHeight = min(preferredHeight, customHeight) }
+        let resizesChat = module == .chat && !detail && !panel
+        if layout == .custom, !resizesTeleprompter, !resizesChat { preferredHeight = min(preferredHeight, customHeight) }
         var width = expandedWidth
         if resizesTeleprompter {
             width = min(width * teleprompterSize.widthScale, screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
+        }
+        if resizesChat {
+            width = min(width * chatSize.widthScale, screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
         }
         return CGSize(width: width,
                       height: min(preferredHeight, screen.height - 48 - quickAccessBottomInset))
@@ -3245,12 +3298,39 @@ struct NotchGlassFade: Equatable {
 enum NotchMenuBarLayout {
     /// A successful AX read can contain menu items from another display.
     /// Without an item on this display, its menu space remains unknown.
-    static func measuredSideRoom(screen: CGRect, cameraWidth: CGFloat, barHeight: CGFloat,
-                                 menuItems: [CGRect], statusItems: [CGRect]) -> CGFloat? {
+    /// Only status windows actually centered inside this display's bar are evidence about its icons.
+    static func statusFrames(screen: CGRect, barHeight: CGFloat, windows: [CGRect],
+                             requiresExtras: Bool, extras: () -> [CGRect]?) -> [CGRect]? {
         let bar = CGRect(x: screen.minX, y: screen.maxY - barHeight, width: screen.width, height: barHeight)
-        guard menuItems.contains(where: { $0.intersects(bar) }) else { return nil }
+        func onBar(_ rect: CGRect) -> Bool {
+            !rect.isEmpty && bar.contains(CGPoint(x: rect.midX, y: rect.midY))
+        }
+        let legacy = windows.filter(onBar)
+        if !requiresExtras, !legacy.isEmpty { return legacy }
+        guard let reported = extras() else { return nil }
+        let visible = reported.filter(onBar)
+        guard !visible.isEmpty else { return nil }
+        return visible + legacy
+    }
+
+    /// A missing or unreadable item can be the one nearest the island.
+    static func completeFrames<Item>(_ items: [Item], limit: Int, read: (Item) -> CGRect?) -> [CGRect]? {
+        guard items.count <= limit else { return nil }
+        var frames: [CGRect] = []
+        for item in items {
+            guard let frame = read(item) else { return nil }
+            frames.append(frame)
+        }
+        return frames
+    }
+
+    static func measuredSideRoom(screen: CGRect, cameraWidth: CGFloat, barHeight: CGFloat,
+                                 menuItems: [CGRect], statusItems: [CGRect], physicalCamera: CGRect? = nil) -> CGFloat? {
+        let bar = CGRect(x: screen.minX, y: screen.maxY - barHeight, width: screen.width, height: barHeight)
+        guard menuItems.contains(where: { !$0.intersection(bar).isEmpty }) else { return nil }
+        let visibleStatus = statusItems.filter { physicalCamera?.contains($0.intersection(bar)) != true }
         return sideRoom(screen: screen, cameraWidth: cameraWidth, barHeight: barHeight,
-                        occupied: menuItems + statusItems)
+                        occupied: menuItems + visibleStatus)
     }
 
     static func sideRoom(screen: CGRect, cameraWidth: CGFloat, barHeight: CGFloat,

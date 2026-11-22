@@ -303,6 +303,7 @@ enum DefaultsKey {
     static let panelUtilityURLCleaner = "panelUtilityURLCleaner"
     static let panelUtilityUninstaller = "panelUtilityUninstaller"
     static let uninstallerCommandBarEnabled = "uninstallerCommandBarEnabled"
+    static let uninstallerWatchesTrash = "uninstallerWatchesTrash"
     static let panelUtilityCleaner = "panelUtilityCleaner"
     static let panelUtilityAppUpdates = "panelUtilityAppUpdates"
     static let appUpdatesCheckFrequency = "appUpdatesCheckFrequency"  // off | daily | weekly
@@ -490,6 +491,7 @@ enum DefaultsKey {
     static let mediaVideoKeepAudio = "mediaVideoKeepAudio"
     static let mediaVideoCodec = "mediaVideoCodec"
     static let mediaVideoSizing = "mediaVideoSizing"
+    static let mediaVideoFormat = "mediaVideoFormat"
     static let mediaVideoTargetMegabytes = "mediaVideoTargetMegabytes"
     static let mediaGIFStart = "mediaGIFStart"
     static let mediaGIFEnd = "mediaGIFEnd"
@@ -808,6 +810,7 @@ enum DefaultsKey {
     static let notchKeepAwakeActivity = "notchKeepAwakeActivity" // a running Keep Awake session in the closed island
     static let notchScratchpad = "notchScratchpad"
     static let notchHoverExpands = "notchHoverExpands"
+    static let notchTapToOpen = "notchTapToOpen"
     static let notchGesturesEnabled = "notchGesturesEnabled"
     static let notchKeyboardLight = "notchKeyboardLight"
     static let notchNotificationsEnabled = "notchNotificationsEnabled"
@@ -830,6 +833,7 @@ enum DefaultsKey {
     static let notchLiveEqualizer = "notchLiveEqualizer"
     static let notchQueueEnabled = "notchQueueEnabled"
     static let notchQueueOnline = "notchQueueOnline"
+    static let notchPlaylistsSource = "notchPlaylistsSource" // "spotify" or "youtube": which playlists the music page shows
     static let spotifyPlaylistOrder = "spotifyPlaylistOrder" // [String] of playlist ids, as the user arranged them
     static let notchDownloadsEnabled = "notchDownloadsEnabled"
     static let notchDownloadsFolderBookmark = "notchDownloadsFolderBookmark"
@@ -839,6 +843,19 @@ enum DefaultsKey {
     static let notchAlarmsEnabled = "notchAlarmsEnabled"
     static let notchAlarmsSound = "notchAlarmsSound"
     static let notchAlarms = "notchAlarms" // JSON of [NotchAlarm]
+    // Chat: the keys themselves live in a private file, never in preferences.
+    static let notchChatEnabled = "notchChatEnabled"
+    static let notchChatProvider = "notchChatProvider"         // ChatProvider.rawValue
+    static let notchChatSystemPrompt = "notchChatSystemPrompt"
+    static let notchChatSaveHistory = "notchChatSaveHistory"
+    static let notchChatHistoryLimit = "notchChatHistoryLimit"
+    static let notchChatUseSelection = "notchChatUseSelection" // attach the selected text when opened by shortcut
+    static let notchChatQuickButtonAdded = "notchChatQuickButtonAdded" // the side bubble was added, once
+    static let notchChatControlHidden = "notchChatControlHidden" // the small Home tile was moved to the bar, once
+    static let notchChatSize = "notchChatSize" // regular, large or huge page
+    static let notchChatShortcutEnabled = "notchChatShortcutEnabled"
+    static let notchChatShortcut = "notchChatShortcut"
+    static func notchChatModel(_ provider: String) -> String { "notchChatModel.\(provider)" }
     static let notchStreaksEnabled = "notchStreaksEnabled"
     static let notchStreakGitHub = "notchStreakGitHub"       // public GitHub username
     static let notchStreakLeetCode = "notchStreakLeetCode"   // public LeetCode username
@@ -1387,6 +1404,7 @@ enum Defaults {
         DefaultsKey.notchKeepAwakeActivity: false,
         DefaultsKey.notchScratchpad: true,
         DefaultsKey.notchHoverExpands: true,
+        DefaultsKey.notchTapToOpen: false,
         DefaultsKey.notchGesturesEnabled: true,
         DefaultsKey.notchKeyboardLight: true,
         DefaultsKey.notchNotificationsEnabled: true,
@@ -1442,6 +1460,16 @@ enum Defaults {
         DefaultsKey.notchCalculatorEnabled: true,
         DefaultsKey.notchAlarmsEnabled: true,
         DefaultsKey.notchAlarmsSound: true,
+        DefaultsKey.notchChatEnabled: true,
+        DefaultsKey.notchChatProvider: ChatProvider.claude.rawValue,
+        DefaultsKey.notchChatSaveHistory: true,
+        DefaultsKey.notchChatHistoryLimit: ChatHistoryRules.defaultLimit,
+        DefaultsKey.notchChatUseSelection: true,
+        DefaultsKey.notchChatSize: NotchChatSize.large.rawValue,
+        DefaultsKey.notchChatQuickButtonAdded: false,
+        DefaultsKey.notchChatControlHidden: false,
+        DefaultsKey.notchChatShortcutEnabled: false,
+        DefaultsKey.notchChatShortcut: GlobalShortcut.chatDefault.storageValue,
         DefaultsKey.notchStreaksEnabled: false,
         DefaultsKey.notchStreakReminder: true,
         DefaultsKey.notchStreakReminderMinutes: NotchStreakSupport.defaultReminderMinutes,
@@ -1523,6 +1551,7 @@ enum Defaults {
         DefaultsKey.panelUtilityURLCleaner: true,
         DefaultsKey.panelUtilityUninstaller: true,
         DefaultsKey.uninstallerCommandBarEnabled: false,
+        DefaultsKey.uninstallerWatchesTrash: false,
         DefaultsKey.panelUtilityCleaner: true,
         DefaultsKey.panelUtilityAppUpdates: true,
         // The list itself costs nothing until it is opened; only the
@@ -1680,6 +1709,7 @@ enum Defaults {
         DefaultsKey.mediaVideoKeepAudio: true,
         DefaultsKey.mediaVideoCodec: MediaVideoCodec.h264.rawValue,
         DefaultsKey.mediaVideoSizing: MediaSizingMode.resolution.rawValue,
+        DefaultsKey.mediaVideoFormat: MediaVideoFormat.mp4.rawValue,
         DefaultsKey.mediaVideoTargetMegabytes: 20,
         DefaultsKey.mediaGIFStart: 0.0,
         DefaultsKey.mediaGIFEnd: 0.0,
@@ -1953,6 +1983,8 @@ enum Defaults {
         hideScratchpadControlOnce(in: defaults)
         hideKeyboardLightControlOnce(in: defaults)
         hideExtraControlsOnce(in: defaults)
+        hideChatControlOnce(in: defaults)
+        addChatQuickButtonOnce(in: defaults)
         // The "all apps" output choice now lasts one session; a saved one
         // would move apps that chose their own output after every launch.
         defaults.removeObject(forKey: DefaultsKey.mixerUniversalOutputDevice)
@@ -2009,6 +2041,8 @@ enum Defaults {
         let automaticKeys: Set<String> = [DefaultsKey.notchScratchpadControlHidden,
                                           DefaultsKey.notchKeyboardLightControlHidden,
                                           DefaultsKey.notchExtraControlsHidden,
+                                          DefaultsKey.notchChatControlHidden,
+                                          DefaultsKey.notchChatQuickButtonAdded,
                                           DefaultsKey.notchHidesMenuBarIcon,
                                           DefaultsKey.notchAgentsOptInMigrated]
         let wasConfigured = saved.keys.contains {
@@ -2071,6 +2105,34 @@ enum Defaults {
         guard !hidden.contains(NotchControlItem.keyboardLight.rawValue) else { return }
         hidden.append(NotchControlItem.keyboardLight.rawValue)
         defaults.set(hidden.joined(separator: ","), forKey: DefaultsKey.notchHiddenControls)
+    }
+
+    /// Chat first appeared as a tile among Home's shortcuts and now has a bar of
+    /// its own, so the tile starts hidden. A saved list is read whole, so it is
+    /// hidden there once; showing it again afterwards stays the person's choice.
+    static func hideChatControlOnce(in defaults: UserDefaults) {
+        guard !defaults.bool(forKey: DefaultsKey.notchChatControlHidden) else { return }
+        defaults.set(true, forKey: DefaultsKey.notchChatControlHidden)
+        guard let saved = defaults.string(forKey: DefaultsKey.notchHiddenControls) else { return }
+        var hidden = saved.split(separator: ",").map(String.init)
+        guard !hidden.contains(NotchControlItem.chat.rawValue) else { return }
+        hidden.append(NotchControlItem.chat.rawValue)
+        defaults.set(hidden.joined(separator: ","), forKey: DefaultsKey.notchHiddenControls)
+    }
+
+    /// Chat gets a bubble beside the island, on the first side with a free place.
+    /// A saved layout is read whole, so one customised before then would never
+    /// show it. Once, so removing it afterwards stays the person's choice.
+    static func addChatQuickButtonOnce(in defaults: UserDefaults) {
+        guard !defaults.bool(forKey: DefaultsKey.notchChatQuickButtonAdded) else { return }
+        defaults.set(true, forKey: DefaultsKey.notchChatQuickButtonAdded)
+        guard let data = defaults.data(forKey: DefaultsKey.notchQuickAccessLayout), !data.isEmpty,
+              var configuration = try? JSONDecoder().decode(NotchQuickAccessConfiguration.self, from: data),
+              !configuration.buttons.contains(where: { $0.action == .module(.chat) }),
+              let side = [NotchQuickAccessSide.right, .bottom, .left].first(where: { configuration.hasRoom(on: $0) })
+        else { return }
+        configuration.buttons.append(NotchQuickButton(id: UUID(), action: .module(.chat), side: side))
+        defaults.set(configuration.encoded, forKey: DefaultsKey.notchQuickAccessLayout)
     }
 
     /// The extra shortcut tiles joined the hidden controls the same way, so a

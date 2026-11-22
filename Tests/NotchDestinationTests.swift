@@ -94,6 +94,7 @@ enum NotchDestinationContract {
         var windowHost: Host? = Host()
         var modules: [NotchModule] = []
         var selected = NotchModule.controls
+        var pageBeforeChat: NotchModule?
         var selectedMetric: MetricDetailKind?
         var expanded = false
         var showsKeyboardFocus = false
@@ -652,6 +653,27 @@ enum NotchDestinationContract {
                                  notificationID: UUID())
         defaults.set(true, forKey: DefaultsKey.notchNotificationsEnabled)
         defer { defaults.set(false, forKey: DefaultsKey.notchNotificationsEnabled) }
+        // Chat opened by its own shortcut is a visit: the next ordinary opening goes back to where the island was.
+        defaults.set(false, forKey: DefaultsKey.notchReturnHome)
+        let visit = Service()
+        visit.open(.files)
+        visit.expanded = false
+        visit.pageBeforeChat = visit.selected
+        visit.open(.chat)
+        expect(visit.selected == .chat, "the chat shortcut opens the chat")
+        visit.expanded = false
+        expect(visit.reopeningModule == .files, "after a chat visit the island names the page it was on, not the chat")
+        visit.open()
+        expect(visit.selected == .files, "and opens there")
+        expect(visit.pageBeforeChat == nil, "opening there ends the visit")
+        visit.open(.chat)
+        visit.expanded = false
+        visit.open()
+        expect(visit.selected == .chat, "a chat the person went to inside the island is reopened as any page is")
+        visit.open(.chat)
+        visit.pageBeforeChat = .files
+        visit.open(.calendar)
+        expect(visit.pageBeforeChat == nil, "going to another page forgets the visit")
         for returnHome in [false, true] {
             defaults.set(returnHome, forKey: DefaultsKey.notchReturnHome)
             defaults.set(NotchModule.controls.rawValue, forKey: DefaultsKey.notchHomeModule)

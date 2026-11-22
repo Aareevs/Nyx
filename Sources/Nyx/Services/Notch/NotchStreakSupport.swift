@@ -160,6 +160,23 @@ enum NotchStreakSupport {
         return cells > 0 ? days : nil
     }
 
+    /// The local days GitHub's public activity feed shows work on: pushes, pull
+    /// requests, issues and reviews. The feed has each action's exact time, so
+    /// the first one of a local day shows at once, where the contributions page
+    /// counts days in UTC and runs behind for hours after local midnight.
+    static func githubEventDays(from data: Data, timeZone: TimeZone = .current) -> Set<Int> {
+        guard let events = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else { return [] }
+        let kinds: Set<String> = ["PushEvent", "PullRequestEvent", "IssuesEvent", "PullRequestReviewEvent"]
+        let formatter = ISO8601DateFormatter()
+        var days = Set<Int>()
+        for event in events {
+            guard let kind = event["type"] as? String, kinds.contains(kind),
+                  let stamp = event["created_at"] as? String, let date = formatter.date(from: stamp) else { continue }
+            days.insert(day(for: .github, date, timeZone: timeZone))
+        }
+        return days
+    }
+
     /// What LeetCode's GraphQL answer holds: the active days, the streak it
     /// counts itself, or why there is none.
     static func leetcodeResult(from data: Data) -> Result<NotchStreakCalendar, NotchStreakFailure> {

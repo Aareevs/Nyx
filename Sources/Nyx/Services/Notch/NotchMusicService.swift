@@ -164,6 +164,7 @@ final class NotchMusicService: ObservableObject {
             var next = NotchPlayback.decode(data, previousArtwork: playerArtwork,
                                            commandContext: reply.flatMap(NotchPlaybackContext.init(reply:)),
                                            canSendCommandsDirectly: reply?["canSendCommandsDirectly"] as? Bool == true)
+            next = next?.adjustedForOwnPlayer()
             playerArtwork = next?.track.artworkData
             // A cover already found for a Firefox-family browser replaces
             // the player's missing or small cover before it is decoded.
@@ -613,8 +614,29 @@ final class NotchMusicService: ObservableObject {
         gestureSkips.send(forward)
     }
 
+    /// The song shown is one Nyx is playing itself (a YouTube playlist).
+    private var playsInNyx: Bool {
+        guard let playback else { return false }
+        return playback.isNyxPlayer && MainActor.assumeIsolated { YouTubeInlinePlayer.shared.isActive }
+    }
+
+    private func sendToNyxPlayer(_ command: Command) -> Bool {
+        MainActor.assumeIsolated {
+            let player = YouTubeInlinePlayer.shared
+            switch command {
+            case .toggle: player.toggle()
+            case .next: player.next()
+            case .previous: player.previous()
+            case .seek(let seconds): player.seek(to: seconds)
+            default: return false
+            }
+            return true
+        }
+    }
+
     @discardableResult
     func send(_ command: Command, context: NotchPlaybackContext?) -> Bool {
+        if playsInNyx, sendToNyxPlayer(command) { return true }
         switch command {
         case .queue, .queuePlay: guard queueVisible, NotchQueueSupport.isEnabled() else { return false }
         default: break
@@ -650,12 +672,17 @@ final class NotchMusicService: ObservableObject {
     }
 
     var canSeek: Bool {
+        if playsInNyx, let playback { return playback.duration > 0 }
         guard let playback, playback.hasPosition, playback.duration > 0 else { return false }
         return playback.canSendCommandsDirectly ? playback.canSeek
             : automationAvailability?.access == .granted && automationAvailability?.capabilities.position != nil
     }
 
     func canPerform(_ command: Command) -> Bool {
+        if playsInNyx {
+            if case .seek = command { return canSeek }
+            return !commandPending
+        }
         guard let playback, playback.commandContext != nil, !commandPending else { return false }
         if case .seek = command { return canSeek }
         if playback.canSendCommandsDirectly { return !lacksTrackSkipping(command) }

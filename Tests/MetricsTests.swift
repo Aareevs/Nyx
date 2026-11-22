@@ -44,7 +44,10 @@ struct MetricsTests {
                 AppManagementFeatureTests.run(suite)
             }),
             ("window-layout", { WindowLayoutFeatureTests.run(suite) }),
-            ("media", { MediaFeatureTests.run(suite) }),
+            ("media", {
+                MediaFeatureTests.run(suite)
+                YouTubePlaylistTests.run(suite)
+            }),
             ("mixer", {
                 MixerRenderContinuityTests.run(suite)
                 MixerNativeDragTests.run(suite)
@@ -143,6 +146,8 @@ struct MetricsTests {
             ("colorpicker", { ColorPickerMathTests.run(suite) }),
             ("teleprompter", { NotchTeleprompterTests.run(suite) }),
             ("streaks", { NotchStreakTests.run(suite) }),
+            ("notch-tap", { NotchTapTests.run(suite) }),
+            ("chat", { ChatTests.run(suite) }),
             ("feature-hub-layout", { FeatureHubLayoutTests.run(suite) }),
             ("display-restoration", {
                 DisplayRestorationTests.run(suite)
@@ -195,6 +200,9 @@ struct MetricsTests {
             }),
             ("uninstaller", {
                 UninstallerFlowTests.run(suite)
+                UninstallerTrashTests.run(suite)
+                UninstallerBulkSelectionTests.run(suite)
+                MixedStateCheckboxTests.run(suite)
                 UninstallerCommandBarCleanupTests.run(suite)
                 SelfUninstallContract.run(suite)
             }),

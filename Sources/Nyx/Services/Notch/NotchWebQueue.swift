@@ -103,7 +103,7 @@ enum NotchWebQueue {
 
     // MARK: YouTube
 
-    private struct Entry {
+    struct Entry {
         let id: String
         let title: String
         let artist: String
@@ -264,7 +264,7 @@ enum NotchWebQueue {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private static func playlistEntries(in html: String) -> [Entry] {
+    static func playlistEntries(in html: String) -> [Entry] {
         guard let start = html.range(of: "ytInitialData = ") else { return [] }
         let rest = html[start.upperBound...]
         guard let end = rest.range(of: ";</script>"),
@@ -304,7 +304,7 @@ enum NotchWebQueue {
 
     // MARK: Downloads
 
-    private static func download(_ address: String, maximumBytes: Int) async -> Data? {
+    static func download(_ address: String, maximumBytes: Int) async -> Data? {
         guard let url = URL(string: address), url.scheme == "https" else { return nil }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 8

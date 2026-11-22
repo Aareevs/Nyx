@@ -8,6 +8,9 @@ enum UninstallerFlowTests {
     struct Leftover: Equatable {
         let id = UUID()
         let url: URL
+        var category: Category = .app
+        var size: Int64 = 0
+        var confidence: UninstallerSupport.LeftoverMatch = .exact
         var include = true
     }
     struct Target {
@@ -17,11 +20,15 @@ enum UninstallerFlowTests {
         let icon: NSImage
     }
     enum Queue {
-        enum QoS { case userInitiated }
+        enum QoS { case userInitiated, utility }
         static var pending: [() -> Void] = []
         static var main: Queue.Type { Self.self }
         static func global(qos: QoS) -> Queue.Type { Self.self }
         static func async(execute: @escaping () -> Void) { pending.append(execute) }
+        static func asyncAfter(deadline: DispatchTime, execute: @escaping () -> Void) { pending.append(execute) }
+        static func concurrentPerform(iterations: Int, execute: (Int) -> Void) {
+            for index in 0..<iterations { execute(index) }
+        }
         static func drain() {
             while !pending.isEmpty { pending.removeFirst()() }
         }
@@ -32,15 +39,16 @@ enum UninstallerFlowTests {
         var phase: Phase = .empty
         var target: Target?
         var refusal: UninstallerSupport.RefusedApp?
-        var targetFileIdentity: UninstallerSupport.FileIdentity?
-        var targetInfoIdentity: UninstallerSupport.FileIdentity?
+        var targetSelection: UninstallerSupport.Selection?
+        var targetTrashMove: UninstallerSupport.TrashMove?
         var allowedRemovalPaths = Set<String>()
         var items: [Leftover] = []
         var scanCancellation: UninstallerSupport.ScanCancellation?
         static func allBundleIDs(in url: URL, fm: FileManager) -> Set<String> { [] }
         static func knownApplicationURLs(candidateBundleIDs: Set<String>) -> [URL] { [] }
-        static func applicationBundleIdentifiers(in urls: [URL]) -> [String] { [] }
-        static func exclusiveOwnedBundleIDs(in url: URL, candidates: Set<String>, knownApplicationIDs: [String]) -> Set<String> { [] }
+        static func applicationBundleIdentifiers(in urls: [URL]) -> [(url: URL, bundleID: String)] { [] }
+        static func exclusiveOwnedBundleIDs(in url: URL, candidates: Set<String>, knownApplicationIDs: [(url: URL, bundleID: String)]) -> Set<String> { [] }
+        static func trashMoveIsCurrent(_ move: UninstallerSupport.TrashMove) -> Bool { false }
         static func signingIdentity(in url: URL, requireValidSignature: Bool) -> (teamIDs: Set<String>, groupIDs: Set<String>) { ([], []) }
         static func exclusiveGroupIDs(_ ids: Set<String>, selectedURL: URL, knownApplications: [URL]) -> Set<String> { [] }
         static var collects = 0
@@ -265,6 +273,9 @@ enum UninstallerFlowTests {
                          "the integration starts off")
             suite.expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.uninstallerCommandBarEnabled),
                          "backup includes the command-bar preference")
+            suite.expect(Defaults.registeredDefaults[DefaultsKey.uninstallerWatchesTrash] as? Bool == false
+                            && SettingsBackupSupport.exportKeys().contains(DefaultsKey.uninstallerWatchesTrash),
+                         "the Trash cleanup offer starts off and travels with settings backup")
         } catch {
             suite.expect(false, "uninstaller fixture failed: \(error)")
         }
