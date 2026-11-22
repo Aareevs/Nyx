@@ -366,7 +366,7 @@ enum FeatureCatalogTests {
 
         // MARK: Features hub catalog
 
-        suite.expect(AppFeature.allCases.count == 78, "feature catalog has 78 features")
+        suite.expect(AppFeature.allCases.count == 79, "feature catalog has 79 features")
         suite.expect(Set(AppFeature.allCases.map(\.rawValue)).count == AppFeature.allCases.count,
                "feature ids are unique")
         suite.expect(AppFeature.allCases.map(\.rawValue) == [
@@ -378,7 +378,7 @@ enum FeatureCatalogTests {
             "keepAwake", "brightness", "extraBrightness", "bluetoothSleep",
             "quickLauncher", "quickToggles", "quitApps", "colorPicker", "screenOCR", "cleaningMode", "mediaTools",
             "cleaner", "uninstaller", "appUpdates", "screenshot", "cameraPreview",
-            "radialMenu", "scratchpad", "commandBar", "screenRecorder", "wallpaper", "notch", "notchCalendar", "notchNotifications", "notchGestures", "notchTimer", "notchAccessories", "notchLyrics", "notchQueue", "notchLiveEqualizer", "notchDownloads", "notchAgents", "notchWatch", "notchCalculator", "notchAlarms", "notchTeleprompter", "notchStreaks", "notchMascot",
+            "radialMenu", "scratchpad", "commandBar", "screenRecorder", "wallpaper", "notch", "notchCalendar", "notchNotifications", "notchGestures", "notchTimer", "notchAccessories", "notchLyrics", "notchQueue", "notchLiveEqualizer", "notchDownloads", "notchAgents", "notchWatch", "notchCalculator", "notchAlarms", "notchTeleprompter", "notchStreaks", "notchChat", "notchMascot",
             "monitorCPU", "monitorGPU", "monitorMemory", "monitorNetwork", "monitorDisk", "monitorPower",
             "connectedDevices",
         ], "feature ids are stable (they persist inside availability keys)")
@@ -555,7 +555,7 @@ enum FeatureCatalogTests {
             "cleaner", "uninstaller", "appUpdates", "screenshot", "cameraPreview", "radialMenu",
             "scratchpad", "commandBar", "screenRecorder",
             "notch", "notchCalendar", "notchNotifications", "notchGestures", "notchTimer", "notchAccessories",
-            "notchLyrics", "notchQueue", "notchLiveEqualizer", "notchDownloads", "notchAgents", "notchWatch", "notchCalculator", "notchAlarms", "notchTeleprompter", "notchStreaks",
+            "notchLyrics", "notchQueue", "notchLiveEqualizer", "notchDownloads", "notchAgents", "notchWatch", "notchCalculator", "notchAlarms", "notchTeleprompter", "notchStreaks", "notchChat",
             "monitorCPU", "monitorGPU", "monitorMemory", "monitorNetwork", "monitorDisk", "monitorPower",
             "connectedDevices",
         ]
@@ -671,7 +671,7 @@ enum FeatureCatalogTests {
         suite.expect(AppFeature.features(in: .dynamicIsland) == [
             .notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer,
             .notchAccessories, .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch,
-            .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks, .notchMascot,
+            .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks, .notchChat, .notchMascot,
         ], "the Dynamic Island heads its own hub section, followed by its extensions")
         suite.expect(AppFeature.dynamicIslandExtensions
                 == Array(AppFeature.features(in: .dynamicIsland).dropFirst()),

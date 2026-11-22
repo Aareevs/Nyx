@@ -27,7 +27,7 @@ enum AppFeature: String, CaseIterable {
          commandBar, screenRecorder, wallpaper
     // Dynamic Island, then its extensions
     case notch, notchCalendar, notchNotifications, notchGestures, notchTimer, notchAccessories, notchLyrics,
-         notchQueue, notchLiveEqualizer, notchDownloads, notchAgents, notchWatch, notchCalculator, notchAlarms, notchTeleprompter, notchStreaks, notchMascot
+         notchQueue, notchLiveEqualizer, notchDownloads, notchAgents, notchWatch, notchCalculator, notchAlarms, notchTeleprompter, notchStreaks, notchChat, notchMascot
     // System monitor, one entry per metric family (temperatures live with
     // their parent metric: CPU temp with CPU, battery temp with power).
     case monitorCPU, monitorGPU, monitorMemory, monitorNetwork, monitorDisk, monitorPower, connectedDevices
@@ -79,7 +79,7 @@ extension AppFeature {
         // Watch asks when an area is chosen and checks on every reading. The
         // companion uses no permission at all.
         case .screenOCR, .cleaningMode, .screenshot, .commandBar, .screenRecorder, .wallpaper, .notchWatch,
-             .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks, .notchMascot:
+             .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks, .notchChat, .notchMascot:
             return false
         default:
             return true
@@ -114,7 +114,7 @@ extension AppFeature {
             return .tools
         case .notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer, .notchAccessories,
              .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch,
-             .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks, .notchMascot:
+             .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks, .notchChat, .notchMascot:
             return .dynamicIsland
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .connectedDevices:
@@ -193,6 +193,7 @@ extension AppFeature {
         case .notchAlarms: return "alarm"
         case .notchTeleprompter: return "text.alignleft"
         case .notchStreaks: return "flame"
+        case .notchChat: return "bubble.left.and.text.bubble.right"
         case .notchMascot: return "face.smiling"
         case .notch: return "macbook"
         case .radialMenu: return "circle.grid.cross"
@@ -270,6 +271,7 @@ extension AppFeature {
         case .notchAlarms: return [DefaultsKey.notchAlarmsEnabled]
         case .notchTeleprompter: return [DefaultsKey.notchTeleprompterEnabled]
         case .notchStreaks: return [DefaultsKey.notchStreaksEnabled]
+        case .notchChat: return [DefaultsKey.notchChatEnabled]
         case .notchMascot: return [DefaultsKey.notchMascotEnabled]
         case .notch: return [DefaultsKey.notchEnabled]
         case .radialMenu: return [DefaultsKey.radialMenuEnabled]
@@ -333,6 +335,9 @@ extension AppFeature {
         switch self {
         case .notchGestures: return []
         case .notchTimer, .notchAccessories, .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks: return []
+        // Reading the selection, when the shortcut opens it, uses Accessibility only
+        // if it is already granted; chat never asks for it.
+        case .notchChat: return []
         case .notchLyrics, .notchQueue: return []
         // Session logs and the saved limits sit in the home folder, outside
         // every protected location, and no sign-in or keychain item is used.
@@ -481,7 +486,7 @@ extension AppFeature {
              .scratchpad, .commandBar, .screenRecorder,
              .notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer, .notchAccessories,
              .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch,
-             .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks,
+             .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks, .notchChat,
              .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .connectedDevices:
             return true

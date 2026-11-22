@@ -377,6 +377,11 @@ final class FeatureRuntime: ObservableObject {
             if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
             else { NotchStreakService.shared.stop() }
         },
+        .notchChat: {
+            if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
+            // Bindings run on the main thread, where the chat lives.
+            MainActor.assumeIsolated { ChatService.shared.syncWithPreferences() }
+        },
         .notchTeleprompter: {
             if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
             else { NotchTeleprompterService.shared.stop() }

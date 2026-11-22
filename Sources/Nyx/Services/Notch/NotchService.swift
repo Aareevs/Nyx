@@ -262,7 +262,7 @@ final class NotchService: ObservableObject {
             || (expanded && selected == .teleprompter && NotchTeleprompterService.shared.keepsIslandOpen)
             || (expanded && showingAppPanel && WallpaperService.shared.isChoosingSource)
             || (expanded && !showingSections && selected == .calendar && Permissions.shared.keepsCalendarPrompt)
-            || (expanded && !showingSections && selected == .files && fileInteractionActive)
+            || (expanded && !showingSections && (selected == .files || selected == .chat) && fileInteractionActive)
             || CameraPreviewService.shared.keepsNotchPermissionPrompt
             || (expanded && !showingSections && selected == .tools && (QuickLauncherService.shared.activeUtility != nil || QuickLauncherService.shared.isEditing))
     }
@@ -895,7 +895,8 @@ final class NotchService: ObservableObject {
                                         ? NotchTimerService.shared.session.mode : NotchTimerSupport.savedMode(),
                                      agentsHeight: module == .agents && !detail && !panel
                                         ? agentsContentHeight(width: geometry.contentWidth) : nil,
-                                     teleprompterSize: NotchTeleprompterSize.current())
+                                     teleprompterSize: NotchTeleprompterSize.current(),
+                                     chatSize: NotchChatSize.current())
     }
 
     /// The AI page is as tall as the cards it shows; nil while the logs are
@@ -1931,7 +1932,7 @@ final class NotchService: ObservableObject {
             case .colorPicker: perform { ColorPickerPanelService.shared.show() }
             case .screenText: perform { ScreenTextService.shared.capture() }
             case .cleaning: perform { CleaningModeManager.shared.activate() }
-            case .clipboard, .camera, .calculator, .alarms, .teleprompter, .streaks:
+            case .clipboard, .camera, .calculator, .alarms, .teleprompter, .streaks, .chat:
                 if let module = item.module { select(module) }
             case .volume, .brightness, .keyboardLight: select(.controls)
             }

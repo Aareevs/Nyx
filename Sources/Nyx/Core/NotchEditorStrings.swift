@@ -71,6 +71,7 @@ struct NotchEditorStrings {
     let alarmsSummary: String
     let teleprompterSummary: String
     let streaksSummary: String
+    let chatSummary: String
 
     func enableFeature(_ title: String) -> String { String(format: enableFeatureFormat, title) }
     func enableSetting(_ title: String) -> String { String(format: enableSettingFormat, title) }
@@ -99,6 +100,7 @@ struct NotchEditorStrings {
         case .alarms: return alarmsSummary
         case .teleprompter: return teleprompterSummary
         case .streaks: return streaksSummary
+        case .chat: return chatSummary
         }
     }
 }

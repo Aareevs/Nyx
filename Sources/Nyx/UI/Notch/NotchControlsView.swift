@@ -121,7 +121,7 @@ struct NotchControlsView: View {
             NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {
                 service.perform { CleaningModeManager.shared.activate() }
             }
-        case .clipboard, .camera, .calculator, .alarms, .teleprompter, .streaks:
+        case .clipboard, .camera, .calculator, .alarms, .teleprompter, .streaks, .chat:
             NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {
                 if let module = item.module { service.select(module) }
             }
@@ -157,6 +157,7 @@ extension NotchControlItem {
         case .alarms: return NotchModule.alarms.title(l10n.language)
         case .teleprompter: return NotchModule.teleprompter.title(l10n.language)
         case .streaks: return NotchModule.streaks.title(l10n.language)
+        case .chat: return NotchModule.chat.title(l10n.language)
         }
     }
 }

@@ -1196,6 +1196,7 @@ extension AppFeature {
         case .notchAlarms: return FeatureStrings.notchAlarms(language).title
         case .notchTeleprompter: return FeatureStrings.notchTeleprompter(language).title
         case .notchStreaks: return FeatureStrings.notchStreaks(language).title
+        case .notchChat: return FeatureStrings.notchChat(language).title
         case .notchMascot: return FeatureStrings.notchMascot(language).title
         case .notch: return FeatureStrings.notch(language).title
         case .radialMenu: return FeatureStrings.radialMenu(language).pageTitle
@@ -1282,6 +1283,7 @@ extension AppFeature {
         case .notchAlarms: return FeatureStrings.notchAlarms(L10n.shared.language).description
         case .notchTeleprompter: return FeatureStrings.notchTeleprompter(L10n.shared.language).description
         case .notchStreaks: return FeatureStrings.notchStreaks(L10n.shared.language).description
+        case .notchChat: return FeatureStrings.notchChat(L10n.shared.language).description
         case .notchMascot: return FeatureStrings.notchMascot(L10n.shared.language).hubDescription
         case .notch: return FeatureStrings.notch(L10n.shared.language).description
         case .radialMenu: return FeatureStrings.radialMenu(L10n.shared.language).hubDescription

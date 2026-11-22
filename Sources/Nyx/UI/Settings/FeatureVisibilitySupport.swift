@@ -5,7 +5,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable {
     case general, features, connectors, energy, monitor
-    case mouse, switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, notch, notchMascot
+    case mouse, switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, chat, notch, notchMascot
     case shortcuts, advanced, about
 }
 
@@ -367,6 +367,7 @@ extension AppFeature {
         case .wallpaper:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .wallpaper)
         case .notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer, .notchAccessories, .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch, .notchCalculator, .notchAlarms, .notchTeleprompter, .notchStreaks: return FeatureSettingsDestination(.notch)
+        case .notchChat: return FeatureSettingsDestination(.chat)
         case .notchMascot: return FeatureSettingsDestination(.notchMascot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
         case .scratchpad:
@@ -420,6 +421,7 @@ enum FeatureVisibilitySupport {
         case .notchMascot: return [.notchMascot]
         case .radialMenu: return [.radialMenu]
         case .commandBar: return [.commandBar]
+        case .chat: return [.notchChat]
         case .general, .features, .connectors, .shortcuts, .advanced, .about:
             return []
         }

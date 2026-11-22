@@ -28,6 +28,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchAlarmsSound) private var alarmsSound = true
     @AppStorage(DefaultsKey.notchTeleprompterEnabled) private var teleprompterEnabled = true
     @AppStorage(DefaultsKey.notchStreaksEnabled) private var streaksEnabled = false
+    @AppStorage(DefaultsKey.notchChatEnabled) private var chatEnabled = true
     @AppStorage(DefaultsKey.notchTeleprompterHideFromCaptures) private var teleprompterHidden = true
     @AppStorage(DefaultsKey.notchLyricsEnabled) private var lyricsEnabled = true
     @AppStorage(DefaultsKey.notchLyricsOnline) private var lyricsOnline = false
@@ -618,6 +619,11 @@ struct NotchSettings: View {
             Text(FeatureStrings.notchTeleprompter(l10n.language).hideHint).font(.caption).foregroundStyle(.secondary)
         case .streaks:
             NotchStreakSettingsControls()
+        case .chat:
+            // Its keys and options have a page of their own in Settings.
+            Button(FeatureStrings.notchChat(l10n.language).openSettings) {
+                router.request(FeatureSettingsDestination(.chat))
+            }
         case .mixer, .system, .tools, .calculator:
             EmptyView()
         }
@@ -964,6 +970,7 @@ struct NotchSettings: View {
         case .alarms: return .notchAlarms
         case .teleprompter: return .notchTeleprompter
         case .streaks: return .notchStreaks
+        case .chat: return .notchChat
         }
     }
 
@@ -1153,6 +1160,7 @@ struct NotchSettings: View {
                 && (module != .alarms || alarmsEnabled)
                 && (module != .teleprompter || teleprompterEnabled)
                 && (module != .streaks || streaksEnabled)
+                && (module != .chat || chatEnabled)
                 && !hidden.split(separator: ",").contains(Substring(module.rawValue))
         } set: { shown in
             if module == .timer { timerEnabled = shown }
@@ -1165,6 +1173,7 @@ struct NotchSettings: View {
             if module == .alarms { alarmsEnabled = shown }
             if module == .teleprompter { teleprompterEnabled = shown }
             if module == .streaks { streaksEnabled = shown; NotchStreakService.shared.preferencesChanged() }
+            if module == .chat { chatEnabled = shown }
             var values = Set(hidden.split(separator: ",").map(String.init))
             if shown { values.remove(module.rawValue) } else { values.insert(module.rawValue) }
             hidden = values.sorted().joined(separator: ",")

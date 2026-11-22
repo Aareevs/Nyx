@@ -4,7 +4,7 @@ import Foundation
 import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms, teleprompter, streaks
+    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, calculator, alarms, teleprompter, streaks, chat
     var id: String { rawValue }
 
     var symbol: String {
@@ -32,6 +32,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .alarms: return "alarm"
         case .teleprompter: return "text.alignleft"
         case .streaks: return "flame"
+        case .chat: return "bubble.left.and.text.bubble.right"
         }
     }
 
@@ -58,6 +59,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .alarms: return "l"
         case .teleprompter: return "e"
         case .streaks: return "j"
+        case .chat: return "h"
         }
     }
 
@@ -85,12 +87,40 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .alarms: return AppFeature.notchAlarms.isAvailable(in: defaults)
         case .teleprompter: return AppFeature.notchTeleprompter.isAvailable(in: defaults)
         case .streaks: return AppFeature.notchStreaks.isAvailable(in: defaults)
+        case .chat: return AppFeature.notchChat.isAvailable(in: defaults)
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .connectedDevices].contains { (feature: AppFeature) in
                 feature.isAvailable(in: defaults)
             }
         }
+    }
+}
+
+/// How large the chat page is, whatever the island's own size: a conversation
+/// needs more room than a page of controls. Applies to every layout, a custom
+/// one included, which sets the size of the other pages.
+enum NotchChatSize: String, CaseIterable {
+    case regular, large, huge
+
+    var heightScale: CGFloat {
+        switch self {
+        case .regular: return 1.5
+        case .large: return 2.0
+        case .huge: return 2.6
+        }
+    }
+
+    var widthScale: CGFloat {
+        switch self {
+        case .regular: return 1.25
+        case .large: return 1.5
+        case .huge: return 1.8
+        }
+    }
+
+    static func current(in defaults: UserDefaults = .standard) -> NotchChatSize {
+        defaults.string(forKey: DefaultsKey.notchChatSize).flatMap(NotchChatSize.init(rawValue:)) ?? .large
     }
 }
 
@@ -1302,9 +1332,11 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
     case volume, brightness, keyboardLight, music, mixer, keepAwake, timer, calendar, microphone, screenshot, recording, speedTest, panel, commandBar, scratchpad
     // More tiles to choose from in Settings. All start hidden.
     case colorPicker, screenText, clipboard, camera, cleaning, calculator, alarms, teleprompter, streaks
+    // Chat has a bar of its own on Home; this tile is for anyone who also wants one among the shortcuts.
+    case chat
     static let defaultHidden = "keyboardLight,microphone,screenshot,recording,speedTest,panel,commandBar,scratchpad," + extraHidden
     /// The tiles added after the first set, hidden until someone picks them.
-    static let extraHidden = "colorPicker,screenText,clipboard,camera,cleaning,calculator,alarms,teleprompter,streaks"
+    static let extraHidden = "colorPicker,screenText,clipboard,camera,cleaning,calculator,alarms,teleprompter,streaks,chat"
     var id: String { rawValue }
 
     /// A level draws as a slider in the card row; everything else is a tile.
@@ -1343,6 +1375,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return NotchModule.alarms.symbol
         case .teleprompter: return NotchModule.teleprompter.symbol
         case .streaks: return NotchModule.streaks.symbol
+        case .chat: return NotchModule.chat.symbol
         }
     }
 
@@ -1355,6 +1388,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return .alarms
         case .teleprompter: return .teleprompter
         case .streaks: return .streaks
+        case .chat: return .chat
         default: return nil
         }
     }
@@ -1384,6 +1418,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return .page(.alarms, feature: .notchAlarms)
         case .teleprompter: return .page(.teleprompter, feature: .notchTeleprompter)
         case .streaks: return .page(.streaks, feature: .notchStreaks)
+        case .chat: return .page(.chat, feature: .notchChat)
         }
     }
 
@@ -1413,6 +1448,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .alarms: return NotchSupport.modules(in: defaults).contains(.alarms)
         case .teleprompter: return NotchSupport.modules(in: defaults).contains(.teleprompter)
         case .streaks: return NotchSupport.modules(in: defaults).contains(.streaks)
+        case .chat: return NotchSupport.modules(in: defaults).contains(.chat)
         }
     }
 }
@@ -1933,6 +1969,7 @@ enum NotchSupport {
                 && ($0 != .alarms || defaults.bool(forKey: DefaultsKey.notchAlarmsEnabled))
                 && ($0 != .teleprompter || defaults.bool(forKey: DefaultsKey.notchTeleprompterEnabled))
                 && ($0 != .streaks || defaults.bool(forKey: DefaultsKey.notchStreaksEnabled))
+                && ($0 != .chat || defaults.bool(forKey: DefaultsKey.notchChatEnabled))
         }
     }
 
@@ -2159,6 +2196,11 @@ enum NotchSupport {
 
     static func routesAppPanel(in defaults: UserDefaults = .standard) -> Bool {
         isEnabled(in: defaults) && defaults.bool(forKey: DefaultsKey.notchAppPanel)
+    }
+
+    /// Whether the chat page can be opened: the island is on and shows it.
+    static func routesChat(in defaults: UserDefaults = .standard) -> Bool {
+        isEnabled(in: defaults) && modules(in: defaults).contains(.chat)
     }
 
     static func routesScratchpad(in defaults: UserDefaults = .standard) -> Bool {
@@ -2813,7 +2855,8 @@ struct NotchGeometry: Equatable {
                       capturePreviewHeight: CGFloat? = nil,
                       timerHasSession: Bool = false, timerMode: NotchTimerMode = .timer,
                       agentsHeight: CGFloat? = nil,
-                      teleprompterSize: NotchTeleprompterSize = .medium) -> CGSize {
+                      teleprompterSize: NotchTeleprompterSize = .medium,
+                      chatSize: NotchChatSize = .large) -> CGSize {
         let budget = contentBudget
         let showsCapturePreview = module == .captures && !detail && capturePreviewHeight != nil
         let showsFileMedia = module == .files && !detail && fileMediaHeight != nil
@@ -2868,6 +2911,9 @@ struct NotchGeometry: Equatable {
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch, .calculator, .alarms, .streaks:
                 contentHeight = budget
+            case .chat:
+                // A conversation needs room to read, so the page has its own size.
+                contentHeight = budget * chatSize.heightScale
             case .teleprompter:
                 // The page has its own size, chosen on the page itself.
                 contentHeight = budget * teleprompterSize.heightScale
@@ -2875,10 +2921,14 @@ struct NotchGeometry: Equatable {
         }
         var preferredHeight = headerTopInset + headerChromeHeight + contentHeight
         let resizesTeleprompter = module == .teleprompter && !detail && !panel
-        if layout == .custom, !resizesTeleprompter { preferredHeight = min(preferredHeight, customHeight) }
+        let resizesChat = module == .chat && !detail && !panel
+        if layout == .custom, !resizesTeleprompter, !resizesChat { preferredHeight = min(preferredHeight, customHeight) }
         var width = expandedWidth
         if resizesTeleprompter {
             width = min(width * teleprompterSize.widthScale, screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
+        }
+        if resizesChat {
+            width = min(width * chatSize.widthScale, screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
         }
         return CGSize(width: width,
                       height: min(preferredHeight, screen.height - 48 - quickAccessBottomInset))

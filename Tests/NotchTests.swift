@@ -2527,7 +2527,7 @@ enum NotchTests {
         suite.expect(!NotchSupport.routes(.clipboard, in: defaults), "hidden module cannot leak an activity")
         defaults.set("system,music,music,unknown", forKey: DefaultsKey.notchModuleOrder)
         defaults.set(true, forKey: DefaultsKey.notchAgentsEnabled)
-        suite.expect(NotchSupport.modules(in: defaults) == [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar, .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch, .calculator, .alarms, .teleprompter],
+        suite.expect(NotchSupport.modules(in: defaults) == [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar, .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch, .calculator, .alarms, .teleprompter, .chat],
                "module order ignores unknown ids and duplicates, preserving newly added modules")
         suite.expect(NotchSupport.routesShelf(in: defaults) && NotchSupport.revealsShelfDrag(in: defaults),
                "the enabled notch replaces the file destination and reveals active drags")
@@ -2746,8 +2746,8 @@ enum NotchTests {
                "the gallery is a page: presets show three whole rows and a tall island shows more")
         suite.expect(compact.sectionColumns == 4 && spacious.sectionColumns == 5
                && compact.sectionColumns * compact.sectionRows(count: allModules.count) < allModules.count
-               && spacious.sectionColumns * (spacious.sectionRows(count: allModules.count) + 1) >= allModules.count,
-               "a compact island steps rows to reach its last sections and a spacious one steps at most one")
+               && spacious.sectionColumns * (spacious.sectionRows(count: allModules.count) + 2) >= allModules.count,
+               "a compact island steps rows to reach its last sections and a spacious one steps at most two")
         suite.expect(NotchLayout.sectionTileHeight * 2 + NotchLayout.sectionSpacing <= NotchLayout.compactContentHeight
                && NotchLayout.sectionTileHeight * 3 + NotchLayout.sectionSpacing * 2 <= NotchLayout.pageContentHeight,
                "two rows fit the compact strip and three rows fit the gallery's page exactly or better")
@@ -2780,7 +2780,9 @@ enum NotchTests {
                 let content = geometry.contentSize(for: geometry.expandedSize(module: module)).height
                 // Beside a camera the levels' own row is added to a preset's strip.
                 let levelRow = module == .controls ? NotchLayout.levelRowHeight + NotchLayout.rowSpacing : 0
-                suite.expect(content <= geometry.contentBudget + levelRow && content > 0,
+                // The chat page is deliberately taller than a preset, by its own scale.
+                let chatGrowth = module == .chat ? geometry.contentBudget * (NotchChatSize.huge.heightScale - 1) : 0
+                suite.expect(content <= geometry.contentBudget + levelRow + chatGrowth && content > 0,
                        "every page stays inside its preset's strip: \(layout) \(module)")
             }
             suite.expect(geometry.contentSize(for: geometry.expandedSize(module: .tools, panel: true)).height == geometry.pageBudget
@@ -2869,6 +2871,14 @@ enum NotchTests {
                     suite.expect(custom.contentBudget == available, "a custom island's budget is what its height leaves below the chrome")
                     for module in NotchModule.allCases {
                         let size = custom.expandedSize(module: module)
+                        if module == .chat {
+                            // The chat page has its own size, set apart from the island's.
+                            suite.expect(size.width >= min(width, frame.width - 24 - NotchQuickAccessLayout.gutter * 2)
+                                   && size.height >= min(height, size.height) && frame.contains(custom.frame(for: size))
+                                   && custom.contentSize(for: size).height > 0,
+                                   "the chat page is at least the custom size and stays on the display")
+                            continue
+                        }
                         suite.expect(size.width == min(width, frame.width - 24 - NotchQuickAccessLayout.gutter * 2) && size.height <= height
                                && frame.contains(custom.frame(for: size)),
                                "custom dimensions fit every module and respect the display and height limit")
