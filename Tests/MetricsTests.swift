@@ -147,6 +147,7 @@ struct MetricsTests {
             ("teleprompter", { NotchTeleprompterTests.run(suite) }),
             ("streaks", { NotchStreakTests.run(suite) }),
             ("notch-tap", { NotchTapTests.run(suite) }),
+            ("whats-new", { WhatsNewTests.run(suite) }),
             ("chat", { ChatTests.run(suite) }),
             ("feature-hub-layout", { FeatureHubLayoutTests.run(suite) }),
             ("display-restoration", {

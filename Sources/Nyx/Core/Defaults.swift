@@ -13,6 +13,7 @@ enum DefaultsKey {
     static let onboardingStep = "onboardingStep"          // resume point if onboarding is interrupted
     static let featuresOnboardingVersion = "featuresOnboardingVersion" // last feature-tour marker handled
     static let lastUpdateIntroVersion = "lastUpdateIntroVersion"
+    static let whatsNewShownVersion = "whatsNewShownVersion" // the last version whose What's new window was shown
     static let featureHubKeptFeatures = "featureHubKeptFeatures" // comma-joined AppFeature raw values
     static let brightnessUpdatePromptState = "brightnessUpdatePromptState"
     static let defaultDuration = "defaultDurationMinutes" // 0 = indefinite
