@@ -830,6 +830,7 @@ enum DefaultsKey {
     static let notchLiveEqualizer = "notchLiveEqualizer"
     static let notchQueueEnabled = "notchQueueEnabled"
     static let notchQueueOnline = "notchQueueOnline"
+    static let notchPlaylistsSource = "notchPlaylistsSource" // "spotify" or "youtube": which playlists the music page shows
     static let spotifyPlaylistOrder = "spotifyPlaylistOrder" // [String] of playlist ids, as the user arranged them
     static let notchDownloadsEnabled = "notchDownloadsEnabled"
     static let notchDownloadsFolderBookmark = "notchDownloadsFolderBookmark"

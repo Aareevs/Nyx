@@ -71,7 +71,7 @@ struct NotchMusicView: View {
                     switch openExtra {
                     case .lyrics: if let playback = service.playback { NotchLyricsView(playback: playback) }
                     case .queue: if let playback = service.playback { NotchQueueView(playback: playback) }
-                    case .playlists: NotchSpotifyView()
+                    case .playlists: NotchPlaylistsView()
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
@@ -219,7 +219,7 @@ struct NotchMusicView: View {
         if showsQueue, service.playback != nil {
             extraButton(.queue, title: FeatureStrings.notchMusicExtras(l10n.language).queue, symbol: "list.bullet")
         }
-        extraButton(.playlists, title: "Spotify playlists", symbol: "music.note.list")
+        extraButton(.playlists, title: "Playlists", symbol: "music.note.list")
     }
 
     /// The island's way to its sections where its row does not hold it.

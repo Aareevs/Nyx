@@ -44,7 +44,10 @@ struct MetricsTests {
                 AppManagementFeatureTests.run(suite)
             }),
             ("window-layout", { WindowLayoutFeatureTests.run(suite) }),
-            ("media", { MediaFeatureTests.run(suite) }),
+            ("media", {
+                MediaFeatureTests.run(suite)
+                YouTubePlaylistTests.run(suite)
+            }),
             ("mixer", {
                 MixerRenderContinuityTests.run(suite)
                 MixerNativeDragTests.run(suite)
