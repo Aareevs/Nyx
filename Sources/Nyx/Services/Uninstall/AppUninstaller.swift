@@ -60,8 +60,8 @@ final class AppUninstaller: ObservableObject {
     @Published private(set) var refusal: UninstallerSupport.RefusedApp?
     @Published var items: [Leftover] = []
     private var allowedRemovalPaths = Set<String>()
-    private var targetFileIdentity: UninstallerSupport.FileIdentity?
-    private var targetInfoIdentity: UninstallerSupport.FileIdentity?
+    private var targetSelection: UninstallerSupport.Selection?
+    private var targetTrashMove: UninstallerSupport.TrashMove?
     private var scanCancellation: UninstallerSupport.ScanCancellation?
 
     private struct ScanCandidate {
@@ -78,6 +78,23 @@ final class AppUninstaller: ObservableObject {
 
     var selectedSize: Int64 { items.filter(\.include).reduce(0) { $0 + $1.size } }
     var totalSize: Int64 { items.reduce(0) { $0 + $1.size } }
+    /// An unsolicited offer must not replace a checklist the person is using.
+    func canOfferTrashCleanup(of move: UninstallerSupport.TrashMove) -> Bool {
+        switch phase {
+        case .empty, .done:
+            return targetSelection?.identity != move.selection.identity && Self.trashMoveIsCurrent(move)
+        case .scanning, .results, .removing:
+            return false
+        }
+    }
+
+    private static func trashMoveIsCurrent(_ move: UninstallerSupport.TrashMove) -> Bool {
+        let id = move.selection.bundleID
+        return move.isLastCopy(registered: NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id),
+                               running: !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty,
+                               home: FileManager.default.homeDirectoryForCurrentUser)
+    }
+
     var isRemoving: Bool {
         phase == .removing
     }
@@ -91,7 +108,7 @@ final class AppUninstaller: ObservableObject {
 
     /// Reads an app bundle and starts scanning for its leftovers.
     @discardableResult
-    func select(appURL: URL) -> Bool {
+    func select(appURL: URL, trashMove: UninstallerSupport.TrashMove? = nil) -> Bool {
         guard !isRemoving else { return false }
         let selection: UninstallerSupport.Selection
         switch UninstallerSupport.evaluate(appURL) {
@@ -105,14 +122,19 @@ final class AppUninstaller: ObservableObject {
         refusal = nil
         let bundleID = selection.bundleID
         let selectedURL = selection.url
-        let selectedIdentity = selection.identity
-        let selectedInfoIdentity = selection.infoIdentity
         let name = UninstallerSupport.appName(at: appURL)
+        let isTrashed = UninstallerSupport.isInTrash(selectedURL, home: FileManager.default.homeDirectoryForCurrentUser)
+        if isTrashed || trashMove != nil {
+            guard let trashMove, trashMove.selection == selection, Self.trashMoveIsCurrent(trashMove) else {
+                refusal = UninstallerSupport.RefusedApp(name: name, refusal: .unverifiedTrashMove)
+                return false
+            }
+        }
         let icon = NSWorkspace.shared.icon(forFile: appURL.path)
 
         target = Target(name: name, bundleID: bundleID, url: selectedURL, icon: icon)
-        targetFileIdentity = selectedIdentity
-        targetInfoIdentity = selectedInfoIdentity
+        targetSelection = selection
+        targetTrashMove = trashMove
         items = []
         allowedRemovalPaths = []
         // A new selection supersedes any scan still running, even for the
@@ -122,15 +144,42 @@ final class AppUninstaller: ObservableObject {
         scanCancellation = cancellation
         phase = .scanning
 
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        // The scan delivers its results here, once it has finished.
+        var scanned: [Leftover]?
+        let deliverWhenReady = { [weak self] in
+            // Drop the result if the user picked a different app (or reset)
+            // while this scan was running — never show A's files under B.
+            guard let self, let found = scanned,
+                  !cancellation.isCancelled,
+                  self.phase == .scanning, self.target?.url == selectedURL else { return }
+            guard selection.isCurrent else {
+                self.reset()
+                return
+            }
+            if let trashMove, !Self.trashMoveIsCurrent(trashMove) {
+                self.reset()
+                self.refusal = UninstallerSupport.RefusedApp(name: name, refusal: .unverifiedTrashMove)
+                return
+            }
+            self.items = found
+            self.allowedRemovalPaths = Set(found.map { $0.url.standardizedFileURL.path })
+            self.scanCancellation = nil
+            self.phase = .results
+        }
+
+        DispatchQueue.global(qos: .userInitiated).async {
             guard !cancellation.isCancelled else { return }
             let ownedBundleIDs = Self.allBundleIDs(in: selectedURL, fm: .default)
-            let mayClaimSharedData = UninstallerSupport.applicationIsInTrustedInstallRoot(
+            let trusted = trashMove != nil || UninstallerSupport.applicationIsInTrustedInstallRoot(
                 selectedURL, home: FileManager.default.homeDirectoryForCurrentUser)
-            let knownApplications = mayClaimSharedData
+            let knownApplications = trusted
                 ? Self.knownApplicationURLs(candidateBundleIDs: ownedBundleIDs)
                 : []
             let knownApplicationIDs = Self.applicationBundleIdentifiers(in: knownApplications)
+            // If the primary app survives, even an old exclusive helper must
+            // not claim its live parent's profile through a display-name match.
+            let mayClaimSharedData = trusted && UninstallerSupport.sharedDataIsExclusive(
+                selectedURL: selectedURL, bundleID: bundleID, knownApplications: knownApplicationIDs)
             let exclusiveBundleIDs = mayClaimSharedData
                 ? Self.exclusiveOwnedBundleIDs(
                     in: selectedURL, candidates: ownedBundleIDs,
@@ -151,18 +200,8 @@ final class AppUninstaller: ObservableObject {
                                      cancellation: cancellation)
             guard !cancellation.isCancelled else { return }
             DispatchQueue.main.async {
-                guard let self, !cancellation.isCancelled,
-                      self.phase == .scanning, self.target?.url == selectedURL else { return }
-                guard UninstallerSupport.applicationIdentityMatches(
-                    selectedURL, appIdentity: selectedIdentity,
-                    infoIdentity: selectedInfoIdentity) else {
-                    self.reset()
-                    return
-                }
-                self.items = found
-                self.allowedRemovalPaths = Set(found.map { $0.url.standardizedFileURL.path })
-                self.scanCancellation = nil
-                self.phase = .results
+                scanned = found
+                deliverWhenReady()
             }
         }
         return true
@@ -201,8 +240,8 @@ final class AppUninstaller: ObservableObject {
         scanCancellation?.cancel()
         scanCancellation = nil
         target = nil
-        targetFileIdentity = nil
-        targetInfoIdentity = nil
+        targetSelection = nil
+        targetTrashMove = nil
         items = []
         allowedRemovalPaths = []
         phase = .empty
@@ -213,12 +252,36 @@ final class AppUninstaller: ObservableObject {
     func removeSelected() {
         guard canRemoveSelected else { return }
         let chosen = items.filter(\.include)
-        guard !chosen.isEmpty else { return }
+        guard !chosen.isEmpty, let selection = targetSelection else { return }
+        if let move = targetTrashMove {
+            guard Self.trashMoveIsCurrent(move) else {
+                phase = .done(freed: 0, failed: chosen)
+                return
+            }
+            // The rename has no author. During a non-atomic update the install
+            // path can still be empty, just as it is after an uninstall.
+            let alert = NSAlert()
+            alert.messageText = target?.name ?? move.selection.url.lastPathComponent
+            alert.informativeText = L10n.shared.s.uninstallerConfirmTrashCleanup
+            alert.addButton(withTitle: L10n.shared.s.uninstallerCancel)
+            alert.addButton(withTitle: L10n.shared.s.uninstallerRemove)
+            guard alert.runModal() == .alertSecondButtonReturn,
+                  canRemoveSelected, targetTrashMove == move, items.filter(\.include) == chosen else { return }
+            phase = .removing
+            remove(chosen, selection: selection, trashMove: move)
+            return
+        }
         phase = .removing
+        remove(chosen, selection: selection, trashMove: nil)
+    }
 
+    private func remove(_ chosen: [Leftover], selection: UninstallerSupport.Selection,
+                        trashMove: UninstallerSupport.TrashMove?) {
+        let targetURL = selection.url
+        let targetBundleID = selection.bundleID
         // Quit the app and any background app embedded inside it before the
         // bundle moves. Embedded helpers do not always share the main bundle ID.
-        if let targetURL = target?.url {
+        if trashMove == nil, selection.isCurrent {
             for app in NSWorkspace.shared.runningApplications where
                 app.bundleURL?.resolvingSymlinksInPath().standardizedFileURL == targetURL
                 || UninstallerSupport.isNestedBundle(app.bundleURL, in: targetURL) {
@@ -227,10 +290,6 @@ final class AppUninstaller: ObservableObject {
         }
 
         let allowedPaths = allowedRemovalPaths
-        let targetURL = target?.url
-        let targetBundleID = target?.bundleID
-        let expectedTargetIdentity = targetFileIdentity
-        let expectedInfoIdentity = targetInfoIdentity
         let candidateBundleIDs = Set(chosen.compactMap(\.ownerBundleID))
         let candidateGroupIDs = Set(chosen.compactMap(\.ownerGroupID))
         let evidenceBundleIDs = Set(chosen.compactMap(\.evidenceBundleID))
@@ -240,43 +299,50 @@ final class AppUninstaller: ObservableObject {
             var freed: Int64 = 0
             var stubborn: [Leftover] = []
             var failed: [Leftover] = []
-            let targetIsOriginal = targetURL.map {
-                UninstallerSupport.applicationIdentityMatches(
-                    $0, appIdentity: expectedTargetIdentity,
-                    infoIdentity: expectedInfoIdentity)
-            } ?? false
+            let targetIsOriginal = selection.isCurrent
             let mayClaimSharedData = targetIsOriginal
-            let lookupBundleIDs = candidateBundleIDs.union(evidenceBundleIDs)
+                && (!candidateBundleIDs.isEmpty || !candidateGroupIDs.isEmpty)
+            let lookupBundleIDs = candidateBundleIDs.union(evidenceBundleIDs).union([targetBundleID])
             // Only the shared-data claims below read this roster, and building
             // it opens every installed app. Same gate `select()` already uses.
             let knownApplications = mayClaimSharedData
                 ? Self.knownApplicationURLs(candidateBundleIDs: lookupBundleIDs)
                 : []
             let knownApplicationIDs = Self.applicationBundleIdentifiers(in: knownApplications)
-            let exclusiveBundleIDs = mayClaimSharedData ? targetURL.map {
-                Self.exclusiveOwnedBundleIDs(
-                    in: $0, candidates: candidateBundleIDs,
-                    knownApplicationIDs: knownApplicationIDs,
-                    requiresCurrentOwnership: true)
-            } ?? [] : []
-            let exclusiveEvidenceBundleIDs = mayClaimSharedData ? targetURL.map {
-                UninstallerSupport.exclusiveBundleIDs(
-                    evidenceBundleIDs, selectedURL: $0,
-                    knownApplications: knownApplicationIDs)
-            } ?? [] : []
+            let canRemoveData = mayClaimSharedData && UninstallerSupport.sharedDataIsExclusive(
+                selectedURL: targetURL, bundleID: targetBundleID, knownApplications: knownApplicationIDs)
+            let exclusiveBundleIDs = canRemoveData ? Self.exclusiveOwnedBundleIDs(
+                in: targetURL, candidates: candidateBundleIDs, knownApplicationIDs: knownApplicationIDs,
+                requiresCurrentOwnership: true) : []
+            let exclusiveEvidenceBundleIDs = canRemoveData ? UninstallerSupport.exclusiveBundleIDs(
+                evidenceBundleIDs, selectedURL: targetURL, knownApplications: knownApplicationIDs) : []
             let currentGroupIDs: Set<String>
-            if targetIsOriginal, let targetURL {
+            if targetIsOriginal && !candidateGroupIDs.isEmpty {
                 currentGroupIDs = Self.signingIdentity(
                     in: targetURL, requireValidSignature: true).groupIDs
                     .intersection(candidateGroupIDs)
             } else {
                 currentGroupIDs = []
             }
-            let exclusiveGroupIDs = mayClaimSharedData ? targetURL.map {
-                Self.exclusiveGroupIDs(currentGroupIDs, selectedURL: $0,
-                                       knownApplications: knownApplications)
-            } ?? [] : []
+            let exclusiveGroupIDs = canRemoveData ? Self.exclusiveGroupIDs(
+                currentGroupIDs, selectedURL: targetURL, knownApplications: knownApplications) : []
+            var removedTarget = false
+            func targetAllowsRemoval(of item: Leftover) -> Bool {
+                if let trashMove {
+                    return item.category != .app && Self.trashMoveIsCurrent(trashMove)
+                }
+                // A replacement can arrive during the inventory or between
+                // rows. Only this uninstall's own move can explain an absence.
+                if removedTarget && item.category != .app {
+                    return UninstallerSupport.isConfirmedAbsent(at: targetURL)
+                }
+                return selection.isCurrent
+            }
             for item in chosen {
+                guard targetAllowsRemoval(of: item) else {
+                    failed.append(item)
+                    continue
+                }
                 if item.category != .app {
                     let keepsOwnership: Bool
                     if let groupID = item.ownerGroupID {
@@ -310,11 +376,15 @@ final class AppUninstaller: ObservableObject {
                 }
                 do {
                     try fm.trashItem(at: item.url, resultingItemURL: nil)
+                    if item.category == .app { removedTarget = true }
                     freed += item.size
                 } catch {
                     if UninstallerSupport.isConfirmedAbsent(at: item.url) {
                         freed += item.size
-                    } else if fm.fileExists(atPath: item.url.path) {
+                    } else if trashMove == nil, fm.fileExists(atPath: item.url.path) {
+                        // Finder can wait indefinitely at an admin prompt. Only
+                        // delegate a regular uninstall; a replacement may appear
+                        // while Finder is waiting on a Trash cleanup.
                         stubborn.append(item)
                     } else {
                         failed.append(item)
@@ -328,10 +398,11 @@ final class AppUninstaller: ObservableObject {
             // prompt; afterwards whatever still exists counts as failed.
             if !stubborn.isEmpty {
                 let stillSafe = stubborn.filter {
-                    Self.removalIsStillSafe($0.url,
-                                            expectedIdentity: $0.fileIdentity,
-                                            allowedPaths: allowedPaths,
-                                            targetURL: targetURL)
+                    targetAllowsRemoval(of: $0)
+                        && Self.removalIsStillSafe($0.url,
+                                                   expectedIdentity: $0.fileIdentity,
+                                                   allowedPaths: allowedPaths,
+                                                   targetURL: targetURL)
                 }
                 failed.append(contentsOf: stubborn.filter { item in
                     !stillSafe.contains(where: { $0.id == item.id })
@@ -351,7 +422,7 @@ final class AppUninstaller: ObservableObject {
                 guard let self, self.phase == .removing else { return }
                 self.items = []
                 self.phase = .done(freed: freed, failed: failed)
-                if let targetURL {
+                if trashMove == nil {
                     Self.removeCommandBarState(ofRemovedAppAt: targetURL, bundleID: targetBundleID)
                 }
             }
@@ -412,18 +483,22 @@ final class AppUninstaller: ObservableObject {
                                 cancellation: UninstallerSupport.ScanCancellation) -> [Leftover] {
         let fm = FileManager.default
         let home = NSHomeDirectory()
-        var paths = [ScanCandidate(url: appURL, category: .app,
+        // The target header already identifies the trashed app. Keep the
+        // bundle out of the checklist, including Select All and space totals.
+        let appAlreadyTrashed = UninstallerSupport.isInTrash(
+            appURL, home: fm.homeDirectoryForCurrentUser)
+        var paths = appAlreadyTrashed ? [] : [ScanCandidate(url: appURL, category: .app,
                                    ownerBundleID: nil, ownerGroupID: nil,
                                    evidenceBundleID: nil,
                                    confidence: .exact, include: true)]
-        let bundle = Bundle(url: appURL)
+        let info = UninstallerSupport.infoDictionary(of: appURL)
         var displayNames = UninstallerSupport.displayNames(
             localizedName: fm.displayName(atPath: appURL.path),
             fileName: appURL.lastPathComponent,
-            bundleName: bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String,
-            bundleDisplayName: bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            bundleName: info?["CFBundleName"] as? String,
+            bundleDisplayName: info?["CFBundleDisplayName"] as? String
         )
-        if let executable = bundle?.object(forInfoDictionaryKey: "CFBundleExecutable") as? String {
+        if let executable = info?["CFBundleExecutable"] as? String {
             displayNames.append(executable)
         }
         let identity = UninstallerSupport.identity(
@@ -435,17 +510,31 @@ final class AppUninstaller: ObservableObject {
         )
         let allowedRoots = scanRoots(home: home)
 
-        for folder in UninstallerSupport.searchFolders(
+        let folders = UninstallerSupport.searchFolders(
             home: URL(fileURLWithPath: home, isDirectory: true),
             darwinCache: darwinUserDirectory(_CS_DARWIN_USER_CACHE_DIR),
             darwinTemp: darwinUserDirectory(_CS_DARWIN_USER_TEMP_DIR)
-        ) {
-            guard !cancellation.isCancelled else { return [] }
-            appendMatches(in: folder, identity: identity, fm: fm, into: &paths)
+        )
+        // Each folder is listed and matched on its own, and Spotlight is one
+        // more lookup, so they all run side by side. Matches keep the order
+        // they had one after another: the folders in turn, then Spotlight.
+        var matches = [[ScanCandidate]](repeating: [], count: folders.count + 1)
+        let lock = NSLock()
+        DispatchQueue.concurrentPerform(iterations: folders.count + 1) { index in
+            guard !cancellation.isCancelled else { return }
+            var found: [ScanCandidate] = []
+            if index < folders.count {
+                appendMatches(in: folders[index], identity: identity, fm: FileManager(), into: &found)
+            } else {
+                appendSpotlightMatches(identity: identity, roots: spotlightRoots(home: home),
+                                       fm: FileManager(), into: &found)
+            }
+            lock.lock()
+            matches[index] = found
+            lock.unlock()
         }
         guard !cancellation.isCancelled else { return [] }
-        appendSpotlightMatches(identity: identity, roots: spotlightRoots(home: home),
-                               fm: fm, into: &paths)
+        paths += matches.joined()
 
         // Last line of defense: nothing outside the scanned roots (or the app
         // bundle itself) may ever reach the removal list.
@@ -474,7 +563,7 @@ final class AppUninstaller: ObservableObject {
                                 evidenceBundleID: candidate.evidenceBundleID,
                                 confidence: candidate.confidence,
                                 fileIdentity: fileIdentity,
-                                include: candidate.include)
+                                include: !appAlreadyTrashed && candidate.include)
             }
             .sorted { ($0.category.sortRank, -$0.size) < ($1.category.sortRank, -$1.size) }
     }
@@ -576,7 +665,7 @@ final class AppUninstaller: ObservableObject {
                 children = dirListings(at: entry, remainingDepth: remainingDepth - 1, fm: fm)
             }
             let bundleIdentifier = packageExtensions.contains(entry.pathExtension.lowercased())
-                ? UninstallerSupport.verifiedBundleID(Bundle(url: entry)?.bundleIdentifier)
+                ? UninstallerSupport.verifiedBundleID(UninstallerSupport.bundleIdentifier(of: entry))
                 : nil
             return UninstallerSupport.DirListing(name: name, children: children,
                                                   bundleIdentifier: bundleIdentifier)
@@ -727,7 +816,8 @@ final class AppUninstaller: ObservableObject {
     }
 
     private static func knownApplicationURLs(candidateBundleIDs: Set<String>) -> [URL] {
-        var urls = InstalledApps.installedApplications(includeSystemApplications: true).map(\.url)
+        var urls = InstalledApps.installedApplications(
+            includeSystemApplications: true, spotlightPaths: CommandBarService.spotlightApplicationPaths()).map(\.url)
         urls += NSWorkspace.shared.runningApplications.compactMap(\.bundleURL)
         for id in candidateBundleIDs {
             urls += NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id)
@@ -762,10 +852,19 @@ final class AppUninstaller: ObservableObject {
 
     private static func applicationBundleIdentifiers(in applications: [URL])
         -> [(url: URL, bundleID: String)] {
-        let fm = FileManager.default
-        return applications.flatMap { url in
-            allBundleIDs(in: url, fm: fm).map { (url, $0) }
+        // Walking every installed app's bundle is most of a scan's time.
+        // Each walk is independent, so they run side by side.
+        var bundleIDs = [Set<String>](repeating: [], count: applications.count)
+        let lock = NSLock()
+        DispatchQueue.concurrentPerform(iterations: applications.count) { index in
+            // An extension or login item can change without modifying its
+            // parent's Info.plist. Ownership must include the current children.
+            let ids = allBundleIDs(in: applications[index], fm: FileManager())
+            lock.lock()
+            bundleIDs[index] = ids
+            lock.unlock()
         }
+        return zip(applications, bundleIDs).flatMap { url, ids in ids.map { (url, $0) } }
     }
 
     private static func exclusiveGroupIDs(_ candidates: Set<String>,
@@ -802,7 +901,7 @@ final class AppUninstaller: ObservableObject {
 
     private static func allBundleIDs(in appURL: URL, fm: FileManager) -> Set<String> {
         var result = Set<String>()
-        if let primary = UninstallerSupport.verifiedBundleID(Bundle(url: appURL)?.bundleIdentifier) {
+        if let primary = UninstallerSupport.verifiedBundleID(UninstallerSupport.bundleIdentifier(of: appURL)) {
             result.insert(primary)
         }
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isSymbolicLinkKey]
@@ -819,7 +918,7 @@ final class AppUninstaller: ObservableObject {
             }
             guard values?.isDirectory == true,
                   ownedEmbeddedCode(url, in: appURL),
-                  let id = UninstallerSupport.verifiedBundleID(Bundle(url: url)?.bundleIdentifier)
+                  let id = UninstallerSupport.verifiedBundleID(UninstallerSupport.bundleIdentifier(of: url))
             else { continue }
             inspected += 1
             guard inspected <= 256 else { break }

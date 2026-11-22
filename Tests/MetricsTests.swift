@@ -200,6 +200,7 @@ struct MetricsTests {
             }),
             ("uninstaller", {
                 UninstallerFlowTests.run(suite)
+                UninstallerTrashTests.run(suite)
                 UninstallerBulkSelectionTests.run(suite)
                 MixedStateCheckboxTests.run(suite)
                 UninstallerCommandBarCleanupTests.run(suite)
