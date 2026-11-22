@@ -1173,6 +1173,7 @@ final class NotchService: ObservableObject {
         // Alarms ring whether or not the island is open, even with the lid closed.
         NotchAlarmService.shared.syncWithPreferences()
         NotchStreakService.shared.syncWithPreferences()
+        NotchTapDetector.shared.update(enabled: NotchTapSupport.isEnabled())
         refreshCaptureSharing()
         // Requested file work can continue while locked, but disabling its
         // feature must still cancel it before presentation resumes.
@@ -1282,6 +1283,7 @@ final class NotchService: ObservableObject {
     func stop(restoreCapture: Bool = true) {
         preferenceSyncWork?.cancel(); preferenceSyncWork = nil
         hotkey.unregister()
+        NotchTapDetector.shared.update(enabled: false)
         if shortcutRegistrationFailed { shortcutRegistrationFailed = false }
         NotchLyricsService.shared.stop()
         NotchFileToolsService.shared.stop()

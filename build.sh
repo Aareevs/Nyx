@@ -270,6 +270,7 @@ if (( TEST )); then
         Sources/Nyx/Core/NotchChatStrings.swift
         Sources/Nyx/Services/Chat/ChatSupport.swift
         Sources/Nyx/Services/Chat/ChatFiles.swift
+        Sources/Nyx/Services/Notch/NotchTapSupport.swift
         Sources/Nyx/Services/Notch/NotchTapDetection.swift
         Sources/Nyx/Services/YouTube/YouTubePlaylistSupport.swift
         Sources/Nyx/Services/Chat/ChatTransport.swift

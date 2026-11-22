@@ -109,6 +109,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.brightnessControlEnabled) private var brightnessControlEnabled = false
     @AppStorage(DefaultsKey.clipboardHistoryEnabled) private var clipboardHistoryEnabled = false
     @AppStorage(DefaultsKey.notchHoverExpands) private var hoverExpand = true
+    @AppStorage(DefaultsKey.notchTapToOpen) private var tapToOpen = false
     @AppStorage(DefaultsKey.notchQuickAccessLayout) private var accessData = Data()
     @State private var tab = NotchSettingsTab.layout
     @State private var selectedModule = NotchModule.controls
@@ -138,7 +139,7 @@ struct NotchSettings: View {
          String(microphone), String(battery), String(clipboard), String(clipboardWindow), clipboardCardSize,
          String(capture), String(trackChange), captureAction, String(showInCaptures),
          String(returnHome), homeModule, String(opensActivity), String(scratchpad),
-         String(agentsEnabled), String(watchEnabled), String(keepAwakeActivity), String(shortcutEnabled)]
+         String(agentsEnabled), String(watchEnabled), String(keepAwakeActivity), String(shortcutEnabled), String(tapToOpen)]
     }
 
     private var access: Binding<NotchQuickAccessConfiguration> {
@@ -751,6 +752,12 @@ struct NotchSettings: View {
                     if hoverExpand { closeDelayControl }
                 }
                 switchRow("keyboard", l10n.s.quickToolShortcutToggle, isOn: $shortcutEnabled)
+                SettingsRow(symbol: "hand.tap", title: "Open with a tap on the notch", badge: "EXPERIMENTAL",
+                            caption: tapToOpen
+                                ? "Tap the black notch itself with a fingertip over the camera. Uses the Mac's light and motion sensors, on this Mac only. Works best in a lit room; it can miss a tap, and a bump or strong breeze can sometimes open the island."
+                                : "Experimental. Needs a MacBook with these sensors and a lit room.") {
+                    Toggle("Open with a tap on the notch", isOn: $tapToOpen).labelsHidden().toggleStyle(NyxSwitchToggleStyle())
+                }
                 if shortcutEnabled {
                     ShortcutPreferenceRow(role: .notch) {
                         NotchService.shared.syncWithPreferences()
