@@ -65,6 +65,11 @@ enum NotchStreakTests {
                      "streak: the calendar's cells with a level above zero are the active days")
         let githubSnapshot = support.snapshot(days: github ?? [], now: at(11, 1))
         suite.expect(githubSnapshot.streak == 4 && githubSnapshot.doneToday, "streak: four days to Sunday, done today")
+        let ist = TimeZone(identifier: "Asia/Kolkata")!
+        let feed = Data(#"[{"type":"PushEvent","created_at":"2026-11-11T19:09:32Z"},{"type":"WatchEvent","created_at":"2026-11-10T10:00:00Z"}]"#.utf8)
+        suite.expect(support.githubEventDays(from: feed, timeZone: ist) == [support.day(for: .github, Date(timeIntervalSince1970: 1_794_424_172), timeZone: ist)]
+                        && support.githubEventDays(from: Data("not json".utf8)).isEmpty,
+                     "streak: a push at 00:39 IST counts for the local day, and a star does not count")
         suite.expect(support.githubActiveDays(from: "<html>Not Found</html>") == nil, "streak: a page without a calendar is not an empty one")
 
         // LeetCode
