@@ -362,8 +362,12 @@ See [troubleshooting](docs/TROUBLESHOOTING.md) for launch problems, permissions 
 
 Nyx is built on [Vorssaint](https://github.com/vorssaint/vorssaint-utils), an open-source macOS utility by [@vorssaint](https://x.com/vorssaint). The original idea, structure and a large part of the code come from that project, and it is where to look for the upstream version. Everything under "What's new in Nyx" above was added on top by [Aareevs](https://github.com/Aareevs).
 
+**Thank you to [Sentient OS](https://github.com/Sentient-OS-Labs/sentient-os).** Tapping the notch with a fingertip to open the island uses their idea and code for reading a tap from the ambient light sensor together with the motion sensors. It is theirs to thank for, and it is adapted here with their notice kept (see [NOTICE](NOTICE)).
+
 The GitHub, LeetCode and Reddit logos in Streaks, and the Spotify logo in Connectors, and the X, Reddit, Instagram, Netflix, Hotstar and LinkedIn marks shown for browser media, are trademarks of their owners and are used only to label those services.
 
 ## License
 
 [GPL 3.0 or later](LICENSE). Nyx is a modified version of Vorssaint, copyright 2026 Vorssaint, with Nyx's own changes copyright 2026 [Aareevs](https://github.com/Aareevs). As the license requires, the source stays open under the same terms. The Vorssaint name, logo and look are not part of this license (see the original [TRADEMARKS.md](https://github.com/vorssaint/vorssaint-utils/blob/main/TRADEMARKS.md)), and Nyx uses its own name, icon and identity.
+
+The notch-tap files (`NotchTapDetection.swift` and `NotchTapSensor.swift`) are adapted from [Sentient OS](https://github.com/Sentient-OS-Labs/sentient-os), which is licensed under the [GNU AGPL 3.0](https://github.com/Sentient-OS-Labs/sentient-os/blob/main/LICENSE); see [NOTICE](NOTICE).

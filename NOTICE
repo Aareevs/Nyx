@@ -1,0 +1,11 @@
+Nyx contains code adapted from another open-source project, with thanks.
+
+Sentient OS (https://github.com/Sentient-OS-Labs/sentient-os)
+  Used in: Sources/Nyx/Services/Notch/NotchTapDetection.swift
+           Sources/Nyx/Services/Notch/NotchTapSensor.swift
+  License: GNU Affero General Public License v3.0
+           (https://github.com/Sentient-OS-Labs/sentient-os/blob/main/LICENSE)
+  What: detecting a fingertip tap on the notch from the ambient light sensor
+        together with the accelerometer and gyroscope.
+  Changes: the calibration window and sample-recording hooks were removed,
+           and the sensor reports to Nyx's own tap handler.
