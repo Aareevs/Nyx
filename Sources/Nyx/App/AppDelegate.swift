@@ -50,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     private var settingsWindow: NSWindow?
     private var settingsKeepsAppRegular = false
     private var onboardingWindow: NSWindow?
+    private var whatsNewWindow: NSWindow?
 
     // MARK: - Lifecycle
 
@@ -229,6 +230,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
                 guard !skipStartupWindows else { return }
                 self.recoverStatusItemAfterUpdate(previousVersion: previousVersion)
                 self.showBrightnessUpdatePromptIfNeeded()
+                self.showWhatsNewIfNeeded(previousVersion: previousVersion)
             }
         }
     }
@@ -2141,6 +2143,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         }
     }
 
+    /// The What's new window, once after an update that has something to say.
+    /// Marked shown before it opens, so a crash or a quit never replays it.
+    private func showWhatsNewIfNeeded(previousVersion: String?) {
+        let defaults = UserDefaults.standard
+        guard !isTerminating, !AppInfo.isDeveloperBuild,
+              WhatsNewInfo.shouldShow(appVersion: AppInfo.version, previousVersion: previousVersion,
+                                      shownVersion: defaults.string(forKey: DefaultsKey.whatsNewShownVersion))
+        else { return }
+        defaults.set(AppInfo.version, forKey: DefaultsKey.whatsNewShownVersion)
+        showWhatsNew()
+    }
+
+    /// Opens the What's new window for this version; Settings offers it again.
+    func showWhatsNew() {
+        guard !WhatsNewInfo.items(for: AppInfo.version).isEmpty else { return }
+        closePopover()
+        if let window = whatsNewWindow {
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+        let host = NSHostingController(rootView: WhatsNewView(version: AppInfo.version) { [weak self] in
+            self?.whatsNewWindow?.close()
+        })
+        // A plain window of one fixed size, measured once. Letting the content
+        // resize the window as it lays out can trip AppKit's layout pass.
+        host.sizingOptions = []
+        let fitted = host.sizeThatFits(in: CGSize(width: 480, height: 4000))
+        let window = NSWindow(contentViewController: host)
+        window.title = "What's new in Nyx"
+        window.styleMask = [.titled, .closable]
+        window.isReleasedWhenClosed = false
+        window.isRestorable = false
+        window.setContentSize(NSSize(width: 480, height: ceil(fitted.height)))
+        window.delegate = self
+        window.center()
+        whatsNewWindow = window
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+    }
+
     private func brightnessSetupNeeded() -> Bool {
         let defaults = UserDefaults.standard
         return BrightnessUpdatePromptInfo.needsSetup(
@@ -2259,6 +2302,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             // moment the window reopens, on this page or any other.
             SecureInputMonitor.shared.setSettingsWindowOpen(false)
             SettingsWindowVisibility.shared.set(false)
+            return
+        }
+        if window === whatsNewWindow {
+            whatsNewWindow = nil
             return
         }
         if window === onboardingWindow {

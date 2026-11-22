@@ -114,6 +114,7 @@ enum SettingsBackupSupport {
         DefaultsKey.onboardingStep,
         DefaultsKey.featuresOnboardingVersion,
         DefaultsKey.lastUpdateIntroVersion,
+        DefaultsKey.whatsNewShownVersion,
         DefaultsKey.featureHubKeptFeatures,
         DefaultsKey.brightnessUpdatePromptState,
         DefaultsKey.panelCollapsedResetVersion,

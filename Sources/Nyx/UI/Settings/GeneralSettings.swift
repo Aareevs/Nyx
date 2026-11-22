@@ -154,6 +154,8 @@ struct GeneralSettings: View {
                     if case .available(_, let url) = updater.state {
                         Button("Download") { NSWorkspace.shared.open(url) }
                     }
+                    Button("What's new") { appDelegate()?.showWhatsNew() }
+                        .disabled(WhatsNewInfo.items(for: AppInfo.version).isEmpty)
                     Button("Check for updates") { updater.check() }
                         .disabled(updater.state == .checking)
                 }

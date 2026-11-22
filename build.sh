@@ -443,6 +443,7 @@ if (( TEST )); then
         Sources/Nyx/Core/ShelfPromiseDeliveryStrings.swift
         Sources/Nyx/Services/Finder/FinderRenameSupport.swift
         Sources/Nyx/Core/VersionSupport.swift
+        Sources/Nyx/Core/WhatsNewSupport.swift
         Sources/Nyx/Services/InstalledApps.swift
         Sources/Nyx/Services/LaunchAtLoginSupport.swift
         Sources/Nyx/UI/Settings/SettingsSearchSupport.swift
