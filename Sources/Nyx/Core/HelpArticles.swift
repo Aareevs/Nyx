@@ -104,10 +104,41 @@ enum HelpLibrary {
             "**Reddit:** reddit.com doesn't allow apps to read your streak, so Nyx can't see it. You mark each day done yourself with **Mark done**, and Nyx counts the days you mark.",
             "The island's border pulses in the service's colour when a streak goes up.",
         ])],
-        .notch: [.init(heading: "Home", body: [
-            "The first page shows **sliders** for volume, brightness and keyboard light, **now playing** with play, skip and a seek bar, **today's events** from the calendars you chose, and a row of **shortcuts** you pick yourself.",
-            "Settings → Dynamic Island → Pages lets you turn pages on or off and drag them into order.",
-        ])],
+        .notchChat: [
+            .init(heading: "Getting started", body: [
+                "Open **Settings → Chat** to add a key and set Chat up. Then open it from the Chat button beside the island, or turn on its shortcut there (Option+Shift+Space by default).",
+                "Pick **Claude, OpenAI, Gemini or NVIDIA**, paste an API key from that service (or the whole code snippet it comes in) and press **Connect**. The key is checked once, then kept in a private file on your Mac that only your account can read.",
+                "Chat opens in the Dynamic Island, so the island has to be on.",
+            ]),
+            .init(heading: "Ask about selected text", body: [
+                "Select text in any app and press the shortcut. The text is attached above the field so you can see it. It is sent only when you send your message.",
+                "This works where the app shares its selection and Accessibility is already allowed for Nyx. Chat never asks for Accessibility itself. The clipboard button next to the field attaches what you copied instead.",
+            ]),
+            .init(heading: "Your chats and your key", body: [
+                "Messages go straight from your Mac to the service you chose. Nyx has no server in between, and keys never appear in backups.",
+                "Chats are saved as plain text on your Mac, 50 by default. Turn saving off or delete them all in Settings → Chat.",
+                "Using a service costs whatever that service charges for your key.",
+            ]),
+            .init(heading: "What you can set", body: [
+                "In **Settings → Chat** (under Utilities): your keys for each service and which model to use, instructions sent at the start of every chat, how big the chat page is, whether chats are kept and how many, whether the selected text is attached, and the shortcut.",
+                "Each service keeps its own chats. Switching service starts a new chat, and the history panel shows only the chats of the service in use.",
+            ]),
+            .init(heading: "Option+Shift+Space", body: [
+                "Chat's shortcut is Option+Shift+Space, next to the Command Bar's Option+Space, so the two never clash. You can change it in **Settings → Chat**. If another app already uses the combination, Nyx tells you and you can pick a different one.",
+            ]),
+        ],
+        .notch: [
+            .init(heading: "Home", body: [
+                "The first page shows **sliders** for volume, brightness and keyboard light, **now playing** with play, skip and a seek bar, **today's events** from the calendars you chose, and a row of **shortcuts** you pick yourself.",
+                "Settings → Dynamic Island → Pages lets you turn pages on or off and drag them into order.",
+            ]),
+            .init(heading: "Playlists: Spotify and YouTube", body: [
+                "On the Music page, press the **Playlists** button and pick **Spotify** or **YouTube** at the top. Spotify needs you to connect once, and Premium to play.",
+                "For YouTube and YouTube Music, press **+** (or **Paste link**) and add a playlist link. Public and unlisted playlists work, private ones can't be read. Your list is saved only on this Mac.",
+                "Tap a song and it plays inside Nyx, with no browser. It shows in the island's player, so play, pause, next, previous and the seek bar work as usual. The arrows button reorders or removes playlists.",
+                "YouTube's ads play unless you sign in: the person icon next to the **+** has an optional **Sign in to YouTube**, so YouTube Premium applies. The login stays in Nyx's own storage, and you can sign out there.",
+            ]),
+        ],
     ]
 
     // MARK: Guides
