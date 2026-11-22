@@ -23,6 +23,7 @@
 
 <p align="center">
   <a href="https://github.com/Aareevs/Nyx/releases/latest"><img src="https://img.shields.io/badge/release-v1.1.0-2ea043?style=flat-square" alt="Release v1.1.0"></a>
+  <a href="https://github.com/Aareevs/Nyx/releases"><img src="https://img.shields.io/github/downloads/Aareevs/Nyx/total?style=flat-square&label=downloads&color=1d76db" alt="Total downloads"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B%20·%20Apple%20Silicon-blue?style=flat-square" alt="macOS 14+ on Apple Silicon">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-orange?style=flat-square" alt="GPL-3.0 or later"></a>
   <a href="https://github.com/vorssaint/vorssaint-utils"><img src="https://img.shields.io/badge/upstream-vorssaint--utils-8957e5?style=flat-square" alt="Upstream vorssaint-utils"></a>
