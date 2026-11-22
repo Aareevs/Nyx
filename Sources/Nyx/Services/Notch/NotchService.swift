@@ -1397,6 +1397,11 @@ final class NotchService: ObservableObject {
     /// Opening without a page shows what the closed island is already
     /// presenting: a mirrored banner, or an activity unless the user turned
     /// that off. Otherwise the reopening preference decides.
+    /// The page the island was on before chat was opened by its own shortcut. That
+    /// is a visit, not a place to come back to: the next ordinary opening goes
+    /// here instead of to the chat. Forgotten once the person goes to another page.
+    private var pageBeforeChat: NotchModule?
+
     var reopeningDestination: (module: NotchModule, appPanel: Bool, sections: Bool) {
         if !expanded {
             let opensActivity = UserDefaults.standard.object(forKey: DefaultsKey.notchOpensActivity) as? Bool ?? true
@@ -1413,6 +1418,9 @@ final class NotchService: ObservableObject {
                     return (modules.contains(home) ? home : modules.first ?? .controls, false, false)
                 }
             }
+        }
+        if !expanded, selected == .chat, let before = pageBeforeChat, before != .chat, modules.contains(before) {
+            return (before, false, false)
         }
         return (selected, false, false)
     }
@@ -1452,6 +1460,8 @@ final class NotchService: ObservableObject {
         let reopening = reopeningDestination
         let useReopeningSurface = module == nil && !expanded && !appPanel && !sections && metric == nil
         let destination = module.flatMap { modules.contains($0) ? $0 : nil } ?? reopening.module
+        // The visit is over once anything but the chat shortcut opens the island.
+        if module != .chat { pageBeforeChat = nil }
         let appPanel = appPanel || (useReopeningSurface && reopening.appPanel)
         let sections = sections || (useReopeningSurface && reopening.sections)
         if useReopeningSurface && reopening.appPanel { MenuPanelFocus.shared.showNormalPanel() }
@@ -1941,6 +1951,8 @@ final class NotchService: ObservableObject {
 
     func select(_ module: NotchModule) {
         guard modules.contains(module) else { return }
+        // Going to the chat from inside the island is not a visit.
+        if module == .chat { pageBeforeChat = nil }
         open(module)
     }
 
@@ -1960,6 +1972,20 @@ final class NotchService: ObservableObject {
            selectedMetric == nil, let panel, panel.isKeyWindow || NSApp.keyWindow === panel { collapse() }
         else { open(.scratchpad) }
         return true
+    }
+
+    /// The chat page is what the island is showing, not a page behind another
+    /// surface, and the keyboard can reach it.
+    var isShowingChat: Bool {
+        expanded && selected == .chat && !showingAppPanel && !showingSections && !showingCommandBar
+            && selectedMetric == nil
+    }
+
+    func openChat() {
+        guard NotchSupport.routesChat(), acceptsUserInteraction else { return }
+        // Opened from closed: remember where the island was, to go back there next time.
+        if !expanded { pageBeforeChat = selected == .chat ? (pageBeforeChat ?? .controls) : selected }
+        open(.chat)
     }
 
     func openAppPanel(toggle: Bool = false) {
