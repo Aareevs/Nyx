@@ -108,6 +108,10 @@ final class SpotifyLibrary: ObservableObject {
             }
             tracks = found
             if found.isEmpty { message = "No songs to show here" }
+        } catch SpotifyError.notAllowed {
+            // Spotify withholds some playlists' songs from apps like this one,
+            // yet still plays them.
+            message = "Spotify doesn't let Nyx list this playlist's songs. Play still works."
         } catch {
             message = Self.describe(error)
         }
