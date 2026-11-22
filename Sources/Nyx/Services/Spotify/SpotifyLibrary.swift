@@ -158,12 +158,31 @@ final class SpotifyLibrary: ObservableObject {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
         configuration.hides = true
+        configuration.addsToRecentItems = false
+        // A Spotify that was already running is left as the person has it.
+        let alreadyRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client").isEmpty
         _ = try? await NSWorkspace.shared.openApplication(at: app, configuration: configuration)
         for _ in 0..<10 {
+            if !alreadyRunning { Self.keepSpotifyHidden() }
             try await Task.sleep(for: .seconds(1))
-            if let device = try await firstDevice() { return device }
+            if let device = try await firstDevice() {
+                // Spotify shows its window again once it has connected; keep it
+                // in the Dock only, as a closed window with the app still running.
+                if !alreadyRunning {
+                    Self.keepSpotifyHidden()
+                    try? await Task.sleep(for: .milliseconds(700))
+                    Self.keepSpotifyHidden()
+                }
+                return device
+            }
         }
         return nil
+    }
+
+    /// Hides Spotify's windows while Nyx is the one that started it.
+    private static func keepSpotifyHidden() {
+        for running in NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client")
+        where !running.isHidden { running.hide() }
     }
 
     private func firstDevice() async throws -> String? {
