@@ -322,6 +322,7 @@ if (( TEST )); then
         Sources/Nyx/Services/Notch/NotchCalendarSupport.swift
         Sources/Nyx/Services/Notch/NotchKeepAwakeSupport.swift
         Sources/Nyx/Services/Notch/NotchSupport.swift
+        Sources/Nyx/Services/Notch/NotchMenuBarSpace.swift
         Sources/Nyx/Services/Notch/NotchAudioLevelSupport.swift
         Sources/Nyx/Services/Notch/NotchVolumeKeyGate.swift
         Sources/Nyx/Services/Notch/NotchMusicSupport.swift
