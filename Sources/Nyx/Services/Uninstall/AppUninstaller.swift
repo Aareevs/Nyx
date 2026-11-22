@@ -174,6 +174,22 @@ final class AppUninstaller: ObservableObject {
         items[index].include = include
     }
 
+    /// What the select-all checkbox above the results shows for the rows.
+    var bulkSelection: UninstallerSupport.BulkSelection {
+        UninstallerSupport.BulkSelection(included: items.filter(\.include).count, total: items.count)
+    }
+
+    /// Checks or clears every detected file at once. Like a single row, it
+    /// refuses to change a removal that already started.
+    func setAllIncluded(_ include: Bool) {
+        guard !isRemoving else { return }
+        var updated = items
+        for index in updated.indices {
+            updated[index].include = include
+        }
+        items = updated
+    }
+
     /// Drops the refusal note, for an uninstaller view that opens or closes.
     func clearRefusal() {
         refusal = nil

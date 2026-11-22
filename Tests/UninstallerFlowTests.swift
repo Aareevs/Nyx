@@ -8,6 +8,9 @@ enum UninstallerFlowTests {
     struct Leftover: Equatable {
         let id = UUID()
         let url: URL
+        var category: Category = .app
+        var size: Int64 = 0
+        var confidence: UninstallerSupport.LeftoverMatch = .exact
         var include = true
     }
     struct Target {

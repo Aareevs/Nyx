@@ -421,6 +421,7 @@ struct Strings {
     let uninstallerRemoving: String
     let uninstallerFoundTitle: String
     let uninstallerSelectedFormat: String   // + selected, total
+    let uninstallerSelectAll: String
     let uninstallerRemove: String
     let uninstallerCancel: String
     let uninstallerConfirmationExpired: String
@@ -1417,6 +1418,7 @@ extension Strings {
         uninstallerRemoving: "Moving to the Trash…",
         uninstallerFoundTitle: "found",
         uninstallerSelectedFormat: "%d of %d selected",
+        uninstallerSelectAll: "Select all",
         uninstallerRemove: "Move to Trash",
         uninstallerCancel: "Cancel",
         uninstallerConfirmationExpired: "This confirmation is no longer valid. Review the current items and confirm again.",
